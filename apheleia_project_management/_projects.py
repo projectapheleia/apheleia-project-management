@@ -3,7 +3,7 @@ from pathlib import Path
 
 from ._containers import Container, containers
 from ._charts import gantt
-from ._utils import today
+from ._utils import smart_date_converter, today
 from ._workpackages import create_allocation_chart
 
 class Project(Container):
@@ -26,11 +26,23 @@ class Project(Container):
         :return: None
         """
 
+        # Summary Table
+        #   - remove milestones
         df = pd.DataFrame(columns=["project", "start", "end", "description"])
-        self.validate_data(self.imported_df, df)
         df = pd.concat([self.imported_df, df], ignore_index=True)
+        if "milestones" in df.columns:
+            df = df.drop(columns=["milestones"]).drop_duplicates()
+            df = df.reset_index(drop=True)
 
-        # Add availability gantt
+        # Get milestones
+        milestones_df = None
+        markers = {"Today" : today}
+        if "milestones" in self.imported_df.columns:
+            milestones_df = pd.merge(pd.json_normalize(self.imported_df["milestones"]), containers["milestones"]["index"].imported_df, on='milestone', how='inner')
+            milestones_df["date"] = milestones_df["date"].apply(smart_date_converter)
+            markers = markers | milestones_df.set_index('milestone')['date'].to_dict()
+
+        # Add Tomeline gantt
         tab = self.html.add_tab("Timeline")
         tab.add_chart("Project Timeline", gantt(
                                                 df,
@@ -38,9 +50,12 @@ class Project(Container):
                                                 ("start", "Start Date"),
                                                 ("end", "End Date"),
                                                 ("project", "Project Name"),
-                                                markers={"Today" : today},
+                                                markers=markers,
                                             )
         )
+        # Milestones table
+        if milestones_df is not None:
+            tab.add_table("Milestones", milestones_df)
 
         # Find all workpackages relating to this projects
         workpackages = []
@@ -114,9 +129,12 @@ class Projects(Container):
         """
 
         # Summary Table
+        #   - remove milestones
         df = pd.DataFrame(columns=["project", "start", "end", "description"])
-        self.validate_data(self.imported_df, df)
         df = pd.concat([self.imported_df, df], ignore_index=True)
+        if "milestones" in df.columns:
+            df = df.drop(columns=["milestones"]).drop_duplicates()
+            df = df.reset_index(drop=True)
 
         # Add Timeline to html
         tab = self.html.add_tab("Timelines")

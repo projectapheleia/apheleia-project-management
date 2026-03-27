@@ -74,6 +74,12 @@ def gantt(  df : pd.DataFrame,
         width=(bar_width + 200)
     )
 
+    fig.update_xaxes(
+        dtick="M1",
+        tickformat="%b\n%Y",
+        ticklabelmode="period"
+    )
+
     return fig
 
 def stacked_bar(df : pd.DataFrame,

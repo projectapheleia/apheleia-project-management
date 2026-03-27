@@ -4,6 +4,13 @@ data:
     start: "2026-01-01"
     end: "2027-01-01"
     description: "Example of fully defined project"
+    milestones:
+        - milestone: "M0"
+          date: "2026-01-14"
+        - milestone: "M1"
+          date: "2026-02-01"
+        - milestone: "M10"
+          date: "2026-12-31"
 
   - project: "Project Beta"
     start: "2027-01-01"
