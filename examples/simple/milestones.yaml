@@ -1,0 +1,34 @@
+type: "milestones_definitions"
+data:
+  - milestone: "M0"
+    description: "Project Definition"
+
+  - milestone: "M1"
+    description: "Architectural Proposal"
+
+  - milestone: "M2"
+    description: "Micro-architectural Proposal"
+
+  - milestone: "M3"
+    description: "RTL Captured"
+
+  - milestone: "M4"
+    description: "Verification Captured"
+
+  - milestone: "M5"
+    description: "RTL Complete"
+
+  - milestone: "M6"
+    description: "Verification Complete"
+
+  - milestone: "M7"
+    description: "Release Candidate"
+
+  - milestone: "M8"
+    description: "Tape-out"
+
+  - milestone: "M9"
+    description: "Bring-up Complete"
+
+  - milestone: "M10"
+    description: "Production"

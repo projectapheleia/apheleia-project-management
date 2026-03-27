@@ -1,0 +1,10 @@
+type: "projects_definitions"
+data:
+  - project: "Project Alpha"
+    start: "2026-01-01"
+    end: "2027-01-01"
+    description: "Example of fully defined project"
+
+  - project: "Project Beta"
+    start: "2027-01-01"
+

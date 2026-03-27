@@ -1,0 +1,17 @@
+type: "resources_definitions"
+data:
+  - resource: "Mickey Mouse"
+    uname: "mmouse"
+    start: "2024-01-01"
+    end: "2026-06-01"
+    profile: ""
+
+  - resource: "Daffy Duck"
+    uname: "dduck"
+    start: "2026-05-01"
+    end: None
+    profile: "https://en.wikipedia.org/wiki/Daffy_Duck"
+
+  - resource: "He Man"
+    uname: "hman"
+    start: "2021-01-01"

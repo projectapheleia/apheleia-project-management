@@ -1,0 +1,44 @@
+type: "workpackages_definitions"
+data:
+  - workpackage: "CPU Development"
+    project: "Project Alpha"
+    description: "CPU development for project alpha"
+    allocations:
+        - start: "2026-01"
+          end: "2026-06"
+          resource: "Mickey Mouse"
+          allocation: 1.0
+        - start: "2026-07"
+          end: "2026-09"
+          resource: "Mickey Mouse"
+          allocation: 0.5
+        - start: "2026-10"
+          end: "2026-12"
+          resource: "Mickey Mouse"
+          allocation: 1.0
+
+  - workpackage: "SOC Development"
+    project: "Project Alpha"
+    description: "SOC development for project alpha"
+    allocations:
+        - start: "2026-04"
+          end: "2026-05"
+          resource: "Daffy Duck"
+          allocation: 1.0
+        - start: "2026-07"
+          end: "2026-11"
+          resource: "Daffy Duck"
+          allocation: 0.5
+
+  - workpackage: "Top-Level Development"
+    project: "Project Alpha"
+    description: "Top-Level development for project alpha"
+    allocations:
+        - start: "2026-12"
+          end: "2026-12"
+          resource: "Daffy Duck"
+          allocation: 1.0
+        - start: "2026-09"
+          end: "2026-12"
+          resource: "He Man"
+          allocation: 1.0
