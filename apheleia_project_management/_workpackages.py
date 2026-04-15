@@ -1,10 +1,12 @@
 import pandas as pd
 import plotly.express as px
 from pathlib import Path
+import numpy as np
 
-from ._containers import Container
+from ._containers import Container, containers
 from ._charts import gantt, stacked_bar
 from ._utils import smart_date_converter, today
+from ._tasks import create_task_progress, create_task_timeline
 
 class Workpackage(Container):
 
@@ -26,6 +28,9 @@ class Workpackage(Container):
 
         :return: None
         """
+        wp_start = self.summary_df['start'].min()
+        wp_end = self.summary_df['end'].max()
+
         # Add Timeline to html
         tab = self.html.add_tab("Timelines")
         tab.add_chart("Workpackage Timelines", gantt(
@@ -42,9 +47,50 @@ class Workpackage(Container):
         tab = self.html.add_tab("Allocations")
         tab.add_chart("Workpackage Allocations", create_allocation_chart(self.imported_df, "allocations.resource"))
 
-        # Add table to html
-        tab = self.html.add_tab("Workpackages")
-        tab.add_table("Workpackages", self.summary_df)
+        # Tasks
+        # Find all tasks relating to this workpackage
+        tasks = []
+        for k,v in containers["tasks"].items():
+            if not v.imported_df[v.imported_df["workpackage"] == self.name].empty:
+                tasks.append(v)
+
+        if len(tasks) != 0:
+            tasks_df = pd.concat([v.imported_df for v in tasks], ignore_index=True)
+
+            tab = self.html.add_tab("Tasks")
+
+            # Timeline
+            tab.add_chart("Task Timeline", create_task_timeline(tasks_df,
+                                                                markers={
+                                                                            "Today" : today,
+                                                                            "Workpackage Start" : wp_start,
+                                                                            "Workpackage End" : wp_end,
+                                                                        }
+                                                                )
+                        )
+
+            # Progress Chart
+            tab.add_chart("Task Progress", create_task_progress(tasks_df, "task"))
+
+            # Summary Table
+            df = tasks_df.sort_values("status.date").groupby("task").agg(
+                                                                            start=("status.date", "first"),
+                                                                            last_status_date=("status.date", "last"),
+                                                                            remaining_days=("status.remaining", "last"),
+                                                                        ).reset_index()
+
+            df["last_status_date"] = np.where(
+                                                df["remaining_days"] != 0,
+                                                df["last_status_date"].clip(lower=today),
+                                                df["last_status_date"]
+                                            )
+
+            df["end"] = df.apply(
+                                    lambda row: row["last_status_date"] + pd.offsets.BusinessDay(n=int(row["remaining_days"])),
+                                    axis=1
+                                )
+
+            tab.add_table("", df)
 
         super().export_html()
 

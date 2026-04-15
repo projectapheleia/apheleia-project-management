@@ -1,0 +1,44 @@
+type: "tasks_definitions"
+data:
+  - task: "Instruction Fetch"
+    project: "Project Alpha"
+    workpackage: "CPU Development"
+    resource: "Mickey Mouse"
+    description: "RTL coding of instruction pipeline"
+    status:
+      - date: "2026-01-14"
+        spent: 0
+        remaining: 10
+      - date: "2026-02-01"
+        spent: 5
+        remaining: 8
+      - date: "2026-02-20"
+        spent: 10
+        remaining: 0
+  - task: "Load-Store Pipeline"
+    project: "Project Alpha"
+    workpackage: "CPU Development"
+    resource: "Mickey Mouse"
+    description: "RTL coding of load/store pipeline"
+    status:
+      - date: "2026-01-14"
+        spent: 0
+        remaining: 20
+      - date: "2026-02-14"
+        spent: 10
+        remaining: 10
+      - date: "2026-02-20"
+        spent: 12
+        remaining: 10
+  - task: "ALU"
+    project: "Project Alpha"
+    workpackage: "CPU Development"
+    resource: "Mickey Mouse"
+    description: "RTL coding of ALU"
+    status:
+      - date: "2026-02-01"
+        spent: 0
+        remaining: 10
+      - date: "2026-02-16"
+        spent: 5
+        remaining: 0

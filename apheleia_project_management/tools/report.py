@@ -19,7 +19,7 @@ def main():
     create_containers(Path(args.html).resolve(), data)
 
     # Export HTML
-    export_to_html()
+    export_to_html(Path(args.html).resolve())
 
 if __name__ == "__main__":
   main()

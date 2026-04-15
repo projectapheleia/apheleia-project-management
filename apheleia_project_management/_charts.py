@@ -77,7 +77,8 @@ def gantt(  df : pd.DataFrame,
     fig.update_xaxes(
         dtick="M1",
         tickformat="%b\n%Y",
-        ticklabelmode="period"
+        ticklabelmode="period",
+        tickangle=-45
     )
 
     return fig

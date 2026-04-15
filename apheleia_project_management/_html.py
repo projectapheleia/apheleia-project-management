@@ -74,10 +74,27 @@ class HTMLTab():
         Add a chart to the html file
         """
 
-        html = chart.to_html(full_html=False, include_plotlyjs='cdn')
+        if chart is not None:
+            html = chart.to_html(full_html=False, include_plotlyjs='cdn')
+        else:
+            html = ""
         s = f"""
 <h2>{title}</h2>
 {html}
+"""
+        self.sections.append(s)
+
+    def embed_url(self, url):
+        """
+        Embed a url in the html file
+
+        param: url
+        type: str
+        """
+        s = f"""
+<iframe src={url} class="full-page-iframe">
+    <p>Your browser does not support iframes.</p>
+</iframe>
 """
         self.sections.append(s)
 
@@ -275,6 +292,12 @@ class HTML():
     });
     </script>
     <style>
+        .full-page-iframe {
+            border: none;
+            width: 100vw;  /* 100% of the Viewport Width */
+            height: 100vh; /* 100% of the Viewport Height */
+        }
+
         .logo {
             position: absolute;
             top: 20px;

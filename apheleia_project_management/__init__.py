@@ -4,10 +4,12 @@ from pathlib import Path
 
 from ._utils import smart_date_converter
 from ._containers import containers
+from ._html import HTML
 from ._milestones import Milestones
 from ._resources import Resources
 from ._projects import Projects
 from ._workpackages import WorkPackages
+from ._tasks import Tasks
 
 def import_from_yaml(path : Path) -> None:
     """
@@ -23,7 +25,8 @@ def import_from_yaml(path : Path) -> None:
         "milestones" : [],
         "resources" : [],
         "projects" : [],
-        "workpackages" : []
+        "workpackages" : [],
+        "tasks" : [],
     }
 
     for file_path in path.rglob("*.yaml"):
@@ -65,22 +68,39 @@ def create_containers(path : Path, data : dict[str, dict]) -> None:
             c = Projects("index", path / k)
         elif k == "workpackages":
             c = WorkPackages("index", path / k)
+        elif k == "tasks":
+            c = Tasks("index", path / k)
         else:
             raise ValueError(f"Unknown container type: {k}")
 
         # Import data
         c.import_data(v)
 
-def export_to_html():
+def export_to_html(path : Path):
     """
     Export all containers to html
 
+    :param path: Path to html files
+    :type path: Path
     :return: None
     """
 
+    # Create all the container urls
     for ct in containers.values():
         for c in ct.values():
             c.export_html()
+
+    # Create an entry point
+    html = HTML(None, path / "index.html")
+
+    tab = html.add_tab("Projects")
+    tab.embed_url("./projects/index.html")
+    tab = html.add_tab("Resources")
+    tab.embed_url("./resources/index.html")
+    tab = html.add_tab("Milestones")
+    tab.embed_url("./milestones/index.html")
+
+    html.export()
 
 __all__ = [
     "import_from_yaml",

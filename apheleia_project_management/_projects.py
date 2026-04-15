@@ -42,7 +42,7 @@ class Project(Container):
             milestones_df["date"] = milestones_df["date"].apply(smart_date_converter)
             markers = markers | milestones_df.set_index('milestone')['date'].to_dict()
 
-        # Add Tomeline gantt
+        # Add Timeline gantt
         tab = self.html.add_tab("Timeline")
         tab.add_chart("Project Timeline", gantt(
                                                 df,
