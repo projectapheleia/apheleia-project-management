@@ -1,0 +1,24 @@
+type: tasks_definitions
+data:
+- task: Systems Commissioning
+  project: Meridian Admin Building
+  workpackage: Commissioning & Handover
+  resource: Ben Foster
+  description: Commissioning of mechanical, electrical and BMS
+  start: '2028-09-01'
+  estimate: 60
+  status:
+  - date: '2026-11-07'
+    spent: 0
+    remaining: 60
+- task: Snagging
+  project: Meridian Admin Building
+  workpackage: Commissioning & Handover
+  resource: Ben Foster
+  description: Defect inspection and rectification
+  start: '2028-11-24'
+  estimate: 30
+  status:
+  - date: '2026-11-07'
+    spent: 0
+    remaining: 30

@@ -1,0 +1,13 @@
+type: tasks_definitions
+data:
+- task: Electrical First Fix
+  project: Meridian Admin Building
+  workpackage: MEP Installation
+  resource: Aisha Khan
+  description: Containment, cabling and distribution boards
+  start: '2027-10-01'
+  estimate: 120
+  status:
+  - date: '2026-11-07'
+    spent: 0
+    remaining: 120

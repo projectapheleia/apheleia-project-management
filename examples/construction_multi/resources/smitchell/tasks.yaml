@@ -1,0 +1,30 @@
+type: tasks_definitions
+data:
+- task: Business Case & Brief
+  project: Meridian Admin Building
+  workpackage: Management & Controls
+  resource: Sarah Mitchell
+  description: Client brief and business case
+  start: '2026-01-05'
+  estimate: 20
+  status:
+  - date: '2026-01-05'
+    spent: 0
+    remaining: 20
+  - date: '2026-01-17'
+    spent: 10
+    remaining: 10
+  - date: '2026-01-30'
+    spent: 20
+    remaining: 0
+- task: O&M Manuals & Handover
+  project: Meridian Admin Building
+  workpackage: Commissioning & Handover
+  resource: Sarah Mitchell
+  description: Documentation, training and occupation
+  start: '2029-01-01'
+  estimate: 25
+  status:
+  - date: '2026-11-07'
+    spent: 0
+    remaining: 25

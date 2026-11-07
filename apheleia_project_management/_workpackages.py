@@ -1,12 +1,13 @@
+from pathlib import Path
+
 import pandas as pd
 import plotly.express as px
-from pathlib import Path
-import numpy as np
 
+from ._charts import SCALES, aggregate_by_period, color_map, gantt, stacked_bar
 from ._containers import Container, containers
-from ._charts import gantt, stacked_bar
+from ._tasks import create_task_progress_by_task, create_task_timeline, task_summary_stats, task_summary_table
 from ._utils import smart_date_converter, today
-from ._tasks import create_task_progress, create_task_timeline
+
 
 class Workpackage(Container):
 
@@ -40,6 +41,8 @@ class Workpackage(Container):
                                                         ("end", "End Date"),
                                                         ("workpackage", "Workpackage Name"),
                                                         markers={"Today" : today},
+                                                        description="description",
+                                                        link_key="workpackage",
                                                     )
         )
 
@@ -50,14 +53,29 @@ class Workpackage(Container):
         # Tasks
         # Find all tasks relating to this workpackage
         tasks = []
-        for k,v in containers["tasks"].items():
-            if not v.imported_df[v.imported_df["workpackage"] == self.name].empty:
+        for v in containers.get("tasks", {}).values():
+            if v.imported_df is not None and "workpackage" in v.imported_df.columns and \
+               not v.imported_df[v.imported_df["workpackage"] == self.name].empty:
                 tasks.append(v)
 
         if len(tasks) != 0:
             tasks_df = pd.concat([v.imported_df for v in tasks], ignore_index=True)
+            tasks_df = tasks_df[tasks_df["workpackage"] == self.name]
 
             tab = self.html.add_tab("Tasks")
+
+            # Overall summary
+            tab.add_summary("Task Progress Summary", task_summary_stats(tasks_df),
+                            help="Overall progress of every task in this workpackage. Overall progress is the effort spent "
+                                 "as a percentage of effort spent plus remaining. Forecast finish is the latest forecast "
+                                 "completion of any task.")
+
+            # Progress of each task
+            tab.add_chart("Progress by Task", create_task_progress_by_task(tasks_df),
+                          help="One bar per task in this workpackage. The first part is effort spent, the rest is effort "
+                               "remaining (days), so the full length is the current estimate for the task. "
+                               "Blue is effort within the original estimate (the black line), red is effort past it, so a late task ends in red. "
+                               "Click a bar to open the task page.")
 
             # Timeline
             tab.add_chart("Task Timeline", create_task_timeline(tasks_df,
@@ -69,28 +87,10 @@ class Workpackage(Container):
                                                                 )
                         )
 
-            # Progress Chart
-            tab.add_chart("Task Progress", create_task_progress(tasks_df, "task"))
-
             # Summary Table
-            df = tasks_df.sort_values("status.date").groupby("task").agg(
-                                                                            start=("status.date", "first"),
-                                                                            last_status_date=("status.date", "last"),
-                                                                            remaining_days=("status.remaining", "last"),
-                                                                        ).reset_index()
-
-            df["last_status_date"] = np.where(
-                                                df["remaining_days"] != 0,
-                                                df["last_status_date"].clip(lower=today),
-                                                df["last_status_date"]
-                                            )
-
-            df["end"] = df.apply(
-                                    lambda row: row["last_status_date"] + pd.offsets.BusinessDay(n=int(row["remaining_days"])),
-                                    axis=1
-                                )
-
-            tab.add_table("", df)
+            tab.add_table("Tasks", task_summary_table(tasks_df),
+                          help="Progress of every task in this workpackage. Spent and remaining are in days; "
+                               "remaining of 0 means the task is complete.")
 
         super().export_html()
 
@@ -108,20 +108,43 @@ class WorkPackages(Container):
         """
         super().__init__("workpackages", name, path)
 
-    def import_data(self, l : list[dict]) -> None:
+    def import_data(self, definitions : list[dict]) -> None:
         """
         Import data from a list of dictionaries
 
-        :param l: List of dictionaries
+        :param definitions: List of dictionaries
         :return: None
         """
 
-        all_top_level_keys = {key for d in l for key in d.keys()}
+        columns=[
+                    "workpackage",
+                    "project",
+                    "allocations.start",
+                    "allocations.end",
+                    "allocations.resource",
+                    "allocations.allocation",
+                    "description"
+                ]
+
+        self.check_definitions(definitions, "workpackage")
+
+        # No workpackages defined
+        if not definitions:
+            self.imported_df = pd.DataFrame(columns=columns)
+            self.summary_df = pd.DataFrame(columns=["workpackage", "project", "start", "end", "resources", "effort", "description"])
+            return
+
+        # Every workpackage needs at least one allocation
+        for d in definitions:
+            if not d.get("allocations"):
+                raise ValueError(f"workpackage {d.get('workpackage')} has no allocations")
+
+        all_top_level_keys = {key for d in definitions for key in d.keys()}
         meta_cols = [k for k in all_top_level_keys if k != "allocations"]
 
         # Convert new data to dataframe
         self.imported_df = pd.json_normalize(
-                                                l,
+                                                definitions,
                                                 record_path=["allocations"],
                                                 meta=meta_cols,
                                                 record_prefix="allocations.",
@@ -137,15 +160,6 @@ class WorkPackages(Container):
             self.imported_df = self.imported_df.explode(col)
 
         # Create a summary dataframe
-        columns=[
-                    "workpackage",
-                    "project",
-                    "allocations.start",
-                    "allocations.end",
-                    "allocations.resource",
-                    "allocations.allocation",
-                    "description"
-                ]
         df = pd.DataFrame(columns=columns)
         self.validate_data(self.imported_df, df)
         df = pd.concat([self.imported_df, df], ignore_index=True)
@@ -153,14 +167,11 @@ class WorkPackages(Container):
         self.summary_df = summarize_df(df)
 
         # Create child projects
-        for p in l:
+        for p in definitions:
             name = p["workpackage"]
-            if name not in self.children:
-                self.children[name] = Workpackage(name, self.path)
-                self.children[name].imported_df = self.imported_df[self.imported_df["workpackage"] == name]
-                self.children[name].summary_df = self.summary_df[self.summary_df["workpackage"] == name]
-            else:
-                raise ValueError(f"milestone {name} already exists")
+            self.children[name] = Workpackage(name, self.path)
+            self.children[name].imported_df = self.imported_df[self.imported_df["workpackage"] == name]
+            self.children[name].summary_df = self.summary_df[self.summary_df["workpackage"] == name]
 
     def export_html(self) -> None:
         """
@@ -168,6 +179,12 @@ class WorkPackages(Container):
 
         :return: None
         """
+
+        if self.summary_df.empty:
+            tab = self.html.add_tab("Workpackages")
+            tab.add_paragraph("Workpackages", "No workpackages have been defined.")
+            super().export_html()
+            return
 
         # Add Timeline to html
         tab = self.html.add_tab("Timelines")
@@ -178,6 +195,8 @@ class WorkPackages(Container):
                                                         ("end", "End Date"),
                                                         ("workpackage", "Workpackage Name"),
                                                         markers={"Today" : today},
+                                                        description="description",
+                                                        link_key="workpackage",
                                                     )
         )
 
@@ -265,21 +284,41 @@ def create_allocation_chart(df : pd.DataFrame, groupby : str) -> px.bar:
     # Group by month and name to ensure overlapping entries are summed
     df_plot = df_monthly.groupby(['month', groupby], as_index=False)['allocations.allocation'].sum()
 
-    # Create the Plotly Stacked Bar Chart
-    fig = stacked_bar(
-        df_plot,
-        "",
-        ("month", "Month"),
-        ("allocations.allocation", "Allocation (Months Effort)"),
-        groupby,
-        height=1000,
-        bar_width=50,
-    )
+    # Hover text for each group
+    descriptions = {}
+    if "description" in df.columns and groupby == "workpackage":
+        descriptions = df.groupby(groupby)["description"].first().fillna("").to_dict()
 
-    return fig
+    # Same colour for the same name everywhere. Resources use the order of the resources page
+    names = list(df_plot[groupby].unique())
+    if groupby == "allocations.resource":
+        index = containers.get("resources", {}).get("index")
+        if index is not None and index.imported_df is not None:
+            names = list(index.imported_df["resource"]) + names
+    colors = color_map(names)
+
+    # One chart per time scale. Effort is added up over each period
+    figs = {}
+    for scale, (_, x_label, tick_format, hover_format) in SCALES.items():
+        figs[scale] = stacked_bar(
+            aggregate_by_period(df_plot, "month", [groupby], "allocations.allocation", scale, "sum"),
+            "",
+            ("month", x_label),
+            ("allocations.allocation", "Allocation (Months Effort)"),
+            groupby,
+            height=1000,
+            bar_width={"Monthly" : 50, "Quarterly" : 80, "Yearly" : 120}[scale],
+            descriptions=descriptions,
+            link_key={"workpackage" : "workpackage", "project" : "project"}.get(groupby, "resource"),
+            tickformat=tick_format,
+            hover_date_format=hover_format,
+            colors=colors,
+        )
+
+    return figs
 
 __all__ = [
-    "WorkPackage",
+    "Workpackage",
     "WorkPackages",
     "summarize_df",
     "create_allocation_chart",

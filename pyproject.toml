@@ -1,23 +1,44 @@
 [project]
 name = "apheleia-project-management"
 version = "0.1.0"
-description = "Apheleia Project Management Tool"
+description = "Plan projects in YAML and generate interactive HTML reports of timelines, resource allocation and task progress"
 authors = [{name = "avl", email = "avl@projectapheleia.net"}]
 maintainers = [{name = "avl", email = "avl@projectapheleia.net"}]
-keyword = []
-license = {file = "LICENSE"}
+keywords = ["project management", "planning", "gantt", "resource allocation", "yaml", "report"]
+license = "MIT"
+license-files = ["LICENSE"]
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
   "Development Status :: 4 - Beta",
-  "Programming Language :: Python"
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Intended Audience :: End Users/Desktop",
+  "Operating System :: OS Independent",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Office/Business",
+  "Topic :: Office/Business :: Scheduling",
+  "Topic :: Software Development",
 ]
 dependencies = [
+    "numpy>=1.26.0",
     "pandas>=2.2.3",
-    "pyyml>=0.0.2",
-    "matplotlib>=3.10.0",
+    "pyyaml>=6.0",
     "plotly>=6.6.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/projectapheleia/apheleia-project-management"
+Documentation = "https://apheleia-project-management.readthedocs.io"
+Source = "https://github.com/projectapheleia/apheleia-project-management"
+Issues = "https://github.com/projectapheleia/apheleia-project-management/issues"
+Changelog = "https://github.com/projectapheleia/apheleia-project-management/blob/main/CHANGELOG.md"
 
 [project.optional-dependencies]
 dev = [
@@ -41,15 +62,20 @@ target-version = "py310"
 
 src = ["apheleia_project_management"]
 
-select = ["E", "F", "B", "I", "UP", "C90"]
-
 exclude = ["doc", "build", "dist", "venv"]
 
 line-length = 200
 
 fix = false
 
-[tool.ruff.mccabe]
+[tool.ruff.lint]
+select = ["E", "F", "B", "I", "UP", "C90"]
+
+[tool.ruff.lint.per-file-ignores]
+# Html templates, help text and the embedded logo
+"apheleia_project_management/_html.py" = ["E501"]
+
+[tool.ruff.lint.mccabe]
 max-complexity = 30
 
 [project.scripts]

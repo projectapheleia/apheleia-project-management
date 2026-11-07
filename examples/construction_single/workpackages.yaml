@@ -1,0 +1,159 @@
+type: "workpackages_definitions"
+data:
+  - workpackage: "Management & Controls"
+    project: "Meridian Admin Building"
+    description: "Programme, cost control, H&S and reporting"
+    allocations:
+        - start: "2026-01"
+          end: "2029-03"
+          resource: "Sarah Mitchell"
+          allocation: 0.6
+        - start: "2026-01"
+          end: "2029-03"
+          resource: "Hannah Cole"
+          allocation: 0.4
+        - start: "2027-01"
+          end: "2029-03"
+          resource: "Grace Turner"
+          allocation: 0.5
+
+  - workpackage: "Design & Consent"
+    project: "Meridian Admin Building"
+    description: "Architectural, structural and MEP design through planning consent"
+    allocations:
+        - start: "2026-01"
+          end: "2026-07"
+          resource: "Tom Okafor"
+          allocation: 1.0
+        - start: "2026-08"
+          end: "2026-10"
+          resource: "Tom Okafor"
+          allocation: 0.5
+        - start: "2026-02"
+          end: "2026-07"
+          resource: "Priya Nair"
+          allocation: 0.8
+        - start: "2026-03"
+          end: "2026-07"
+          resource: "Luca Romano"
+          allocation: 0.8
+        - start: "2026-08"
+          end: "2026-10"
+          resource: "Priya Nair"
+          allocation: 0.3
+        - start: "2026-08"
+          end: "2026-10"
+          resource: "Luca Romano"
+          allocation: 0.3
+
+  - workpackage: "Procurement"
+    project: "Meridian Admin Building"
+    description: "Tender, evaluation and contractor appointment"
+    allocations:
+        - start: "2026-08"
+          end: "2027-01"
+          resource: "Hannah Cole"
+          allocation: 0.5
+        - start: "2026-11"
+          end: "2027-02"
+          resource: "Tom Okafor"
+          allocation: 0.4
+
+  - workpackage: "Groundworks & Substructure"
+    project: "Meridian Admin Building"
+    description: "Site set-up, excavation, piling and foundations"
+    allocations:
+        - start: "2027-02"
+          end: "2027-08"
+          resource: "Dave Brennan"
+          allocation: 0.8
+        - start: "2027-02"
+          end: "2027-08"
+          resource: "Mei Lin"
+          allocation: 1.0
+        - start: "2027-02"
+          end: "2027-08"
+          resource: "Priya Nair"
+          allocation: 0.3
+
+  - workpackage: "Superstructure"
+    project: "Meridian Admin Building"
+    description: "Steel frame, floors, core and roof structure"
+    allocations:
+        - start: "2027-08"
+          end: "2028-02"
+          resource: "Dave Brennan"
+          allocation: 0.6
+        - start: "2027-06"
+          end: "2028-02"
+          resource: "Carlos Ortega"
+          allocation: 1.0
+        - start: "2027-09"
+          end: "2028-02"
+          resource: "Priya Nair"
+          allocation: 0.3
+
+  - workpackage: "Envelope"
+    project: "Meridian Admin Building"
+    description: "Cladding, glazing and roofing to weathertight"
+    allocations:
+        - start: "2027-11"
+          end: "2028-06"
+          resource: "Dave Brennan"
+          allocation: 0.6
+        - start: "2028-02"
+          end: "2028-06"
+          resource: "Carlos Ortega"
+          allocation: 0.8
+
+  - workpackage: "MEP Installation"
+    project: "Meridian Admin Building"
+    description: "Mechanical, electrical and public health installations"
+    allocations:
+        - start: "2027-10"
+          end: "2028-09"
+          resource: "Joe Walker"
+          allocation: 1.0
+        - start: "2027-10"
+          end: "2028-09"
+          resource: "Aisha Khan"
+          allocation: 1.0
+        - start: "2027-10"
+          end: "2028-09"
+          resource: "Luca Romano"
+          allocation: 0.4
+
+  - workpackage: "Internal Fit-out"
+    project: "Meridian Admin Building"
+    description: "Partitions, ceilings, finishes and joinery"
+    allocations:
+        - start: "2028-04"
+          end: "2029-01"
+          resource: "Ian Reed"
+          allocation: 1.0
+        - start: "2028-07"
+          end: "2029-01"
+          resource: "Dave Brennan"
+          allocation: 0.6
+
+  - workpackage: "Commissioning & Handover"
+    project: "Meridian Admin Building"
+    description: "Testing, commissioning, snagging, O&M and handover"
+    allocations:
+        - start: "2028-09"
+          end: "2029-03"
+          resource: "Ben Foster"
+          allocation: 1.0
+        - start: "2028-10"
+          end: "2029-01"
+          resource: "Joe Walker"
+          allocation: 0.5
+        - start: "2028-10"
+          end: "2029-01"
+          resource: "Aisha Khan"
+          allocation: 0.5
+        - start: "2029-01"
+          end: "2029-03"
+          resource: "Sarah Mitchell"
+          allocation: 0.4
+

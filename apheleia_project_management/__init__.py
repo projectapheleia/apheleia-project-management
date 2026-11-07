@@ -1,15 +1,20 @@
 
-import yaml
+import sys
 from pathlib import Path
 
-from ._utils import smart_date_converter
+import yaml
+
 from ._containers import containers
 from ._html import HTML
 from ._milestones import Milestones
-from ._resources import Resources
 from ._projects import Projects
-from ._workpackages import WorkPackages
+from ._resources import Resources
 from ._tasks import Tasks
+from ._utils import smart_date_converter
+from ._workpackages import WorkPackages
+
+# Add version
+__version__: str = "0.1.0"
 
 def import_from_yaml(path : Path) -> None:
     """
@@ -29,17 +34,35 @@ def import_from_yaml(path : Path) -> None:
         "tasks" : [],
     }
 
-    for file_path in path.rglob("*.yaml"):
-        with open(file_path, "r") as f:
-            content = yaml.safe_load(f)
+    types = {f"{k}_definitions" : k for k in data}
+    found = 0
 
-            if not content or "type" not in content:
-                continue
+    for file_path in sorted(path.rglob("*.yaml")):
+        with open(file_path) as f:
+            try:
+                content = yaml.safe_load(f)
+            except yaml.YAMLError as e:
+                raise ValueError(f"{file_path}: not valid YAML: {e}") from e
 
-            for k in data.keys():
-                if content["type"] == f"{k}_definitions":
-                    for d in content["data"]:
-                        data[k].append({_k : smart_date_converter(_v) for _k, _v in d.items()})
+        if not isinstance(content, dict) or "type" not in content:
+            continue
+
+        k = types.get(content["type"])
+        if k is None:
+            print(f"WARNING : {file_path}: unknown type {content['type']!r} - file ignored. "
+                  f"Expected one of: {', '.join(types)}", file=sys.stderr)
+            continue
+
+        definitions = content.get("data") or []
+        if not isinstance(definitions, list) or not all(isinstance(d, dict) for d in definitions):
+            raise ValueError(f"{file_path}: data must be a list of {k} definitions")
+
+        found += 1
+        for d in definitions:
+            data[k].append({_k : smart_date_converter(_v) for _k, _v in d.items()})
+
+    if found == 0:
+        print(f"WARNING : no input files found in {path}", file=sys.stderr)
 
     return data
 
@@ -103,6 +126,7 @@ def export_to_html(path : Path):
     html.export()
 
 __all__ = [
+    "__version__",
     "import_from_yaml",
     "create_containers",
     "export_to_html",

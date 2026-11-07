@@ -1,0 +1,370 @@
+type: "tasks_definitions"
+data:
+  - task: "Business Case & Brief"
+    project: "Meridian Admin Building"
+    workpackage: "Management & Controls"
+    resource: "Sarah Mitchell"
+    description: "Client brief and business case"
+    start: "2026-01-05"
+    estimate: 20
+    status:
+      - date: "2026-01-05"
+        spent: 0
+        remaining: 20
+      - date: "2026-01-17"
+        spent: 10
+        remaining: 10
+      - date: "2026-01-30"
+        spent: 20
+        remaining: 0
+  - task: "Cost Plan Stage 2"
+    project: "Meridian Admin Building"
+    workpackage: "Management & Controls"
+    resource: "Hannah Cole"
+    description: "Elemental cost plan at concept design"
+    start: "2026-03-02"
+    estimate: 28
+    status:
+      - date: "2026-03-02"
+        spent: 0
+        remaining: 25
+      - date: "2026-03-31"
+        spent: 12
+        remaining: 13
+      - date: "2026-04-30"
+        spent: 25
+        remaining: 0
+  - task: "Cost Plan Stage 3"
+    project: "Meridian Admin Building"
+    workpackage: "Management & Controls"
+    resource: "Hannah Cole"
+    description: "Cost plan at developed design"
+    start: "2026-09-01"
+    estimate: 32
+    status:
+      - date: "2026-09-01"
+        spent: 0
+        remaining: 30
+      - date: "2026-09-30"
+        spent: 15
+        remaining: 15
+      - date: "2026-10-30"
+        spent: 30
+        remaining: 0
+  - task: "H&S Plan"
+    project: "Meridian Admin Building"
+    workpackage: "Management & Controls"
+    resource: "Grace Turner"
+    description: "Construction phase plan and site rules"
+    start: "2027-01-01"
+    estimate: 20
+    status:
+      - date: "2026-11-07"
+        spent: 0
+        remaining: 20
+  - task: "Concept Design"
+    project: "Meridian Admin Building"
+    workpackage: "Design & Consent"
+    resource: "Tom Okafor"
+    description: "Massing, layout and concept"
+    start: "2026-02-02"
+    estimate: 60
+    status:
+      - date: "2026-02-02"
+        spent: 0
+        remaining: 60
+      - date: "2026-04-01"
+        spent: 30
+        remaining: 30
+      - date: "2026-05-29"
+        spent: 60
+        remaining: 0
+  - task: "Developed Design"
+    project: "Meridian Admin Building"
+    workpackage: "Design & Consent"
+    resource: "Tom Okafor"
+    description: "Stage 3 architectural design"
+    start: "2026-06-01"
+    estimate: 62
+    status:
+      - date: "2026-06-01"
+        spent: 0
+        remaining: 70
+      - date: "2026-07-22"
+        spent: 35
+        remaining: 35
+      - date: "2026-09-11"
+        spent: 70
+        remaining: 0
+  - task: "Structural Scheme"
+    project: "Meridian Admin Building"
+    workpackage: "Design & Consent"
+    resource: "Priya Nair"
+    description: "Structural scheme design"
+    start: "2026-03-02"
+    estimate: 55
+    status:
+      - date: "2026-03-02"
+        spent: 0
+        remaining: 50
+      - date: "2026-05-16"
+        spent: 25
+        remaining: 25
+      - date: "2026-07-31"
+        spent: 50
+        remaining: 0
+  - task: "MEP Scheme"
+    project: "Meridian Admin Building"
+    workpackage: "Design & Consent"
+    resource: "Luca Romano"
+    description: "Services strategy and plant design"
+    start: "2026-04-01"
+    estimate: 60
+    status:
+      - date: "2026-04-01"
+        spent: 0
+        remaining: 60
+      - date: "2026-07-01"
+        spent: 30
+        remaining: 30
+      - date: "2026-09-30"
+        spent: 60
+        remaining: 0
+  - task: "Planning Submission"
+    project: "Meridian Admin Building"
+    workpackage: "Design & Consent"
+    resource: "Tom Okafor"
+    description: "Planning application and response to comments"
+    start: "2026-08-03"
+    estimate: 35
+    status:
+      - date: "2026-08-03"
+        spent: 0
+        remaining: 35
+      - date: "2026-09-16"
+        spent: 17
+        remaining: 18
+      - date: "2026-10-30"
+        spent: 35
+        remaining: 0
+  - task: "Tender Documents"
+    project: "Meridian Admin Building"
+    workpackage: "Procurement"
+    resource: "Hannah Cole"
+    description: "Preparation of tender package"
+    start: "2026-08-03"
+    estimate: 32
+    status:
+      - date: "2026-08-03"
+        spent: 0
+        remaining: 30
+      - date: "2026-09-01"
+        spent: 15
+        remaining: 15
+      - date: "2026-09-30"
+        spent: 30
+        remaining: 0
+  - task: "Tender Evaluation"
+    project: "Meridian Admin Building"
+    workpackage: "Procurement"
+    resource: "Hannah Cole"
+    description: "Contractor tender evaluation and award"
+    start: "2026-11-02"
+    estimate: 35
+    status:
+      - date: "2026-11-02"
+        spent: 0
+        remaining: 35
+      - date: "2026-11-04"
+        spent: 1
+        remaining: 34
+      - date: "2026-11-07"
+        spent: 2
+        remaining: 33
+  - task: "Site Set-up"
+    project: "Meridian Admin Building"
+    workpackage: "Groundworks & Substructure"
+    resource: "Dave Brennan"
+    description: "Hoarding, cabins and temporary works"
+    start: "2027-02-01"
+    estimate: 15
+    status:
+      - date: "2026-11-07"
+        spent: 0
+        remaining: 15
+  - task: "Bulk Excavation"
+    project: "Meridian Admin Building"
+    workpackage: "Groundworks & Substructure"
+    resource: "Mei Lin"
+    description: "Excavation and removal of spoil"
+    start: "2027-02-01"
+    estimate: 40
+    status:
+      - date: "2026-11-07"
+        spent: 0
+        remaining: 40
+  - task: "Piling"
+    project: "Meridian Admin Building"
+    workpackage: "Groundworks & Substructure"
+    resource: "Mei Lin"
+    description: "CFA piling and pile caps"
+    start: "2027-03-29"
+    estimate: 45
+    status:
+      - date: "2026-11-07"
+        spent: 0
+        remaining: 45
+  - task: "Ground Beams & Slab"
+    project: "Meridian Admin Building"
+    workpackage: "Groundworks & Substructure"
+    resource: "Mei Lin"
+    description: "Ground beams and ground bearing slab"
+    start: "2027-05-31"
+    estimate: 40
+    status:
+      - date: "2026-11-07"
+        spent: 0
+        remaining: 40
+  - task: "Steel Frame"
+    project: "Meridian Admin Building"
+    workpackage: "Superstructure"
+    resource: "Carlos Ortega"
+    description: "Steel erection levels 0-4"
+    start: "2027-06-01"
+    estimate: 90
+    status:
+      - date: "2026-11-07"
+        spent: 0
+        remaining: 90
+  - task: "Composite Floors"
+    project: "Meridian Admin Building"
+    workpackage: "Superstructure"
+    resource: "Carlos Ortega"
+    description: "Metal decking and concrete pours"
+    start: "2027-10-05"
+    estimate: 60
+    status:
+      - date: "2026-11-07"
+        spent: 0
+        remaining: 60
+  - task: "Roof Structure"
+    project: "Meridian Admin Building"
+    workpackage: "Superstructure"
+    resource: "Carlos Ortega"
+    description: "Roof steelwork and plant deck"
+    start: "2027-12-28"
+    estimate: 30
+    status:
+      - date: "2026-11-07"
+        spent: 0
+        remaining: 30
+  - task: "Facade & Glazing"
+    project: "Meridian Admin Building"
+    workpackage: "Envelope"
+    resource: "Dave Brennan"
+    description: "Curtain wall and rainscreen cladding"
+    start: "2027-11-01"
+    estimate: 100
+    status:
+      - date: "2026-11-07"
+        spent: 0
+        remaining: 100
+  - task: "Roofing"
+    project: "Meridian Admin Building"
+    workpackage: "Envelope"
+    resource: "Carlos Ortega"
+    description: "Roof membrane and rooflights"
+    start: "2028-02-08"
+    estimate: 30
+    status:
+      - date: "2026-11-07"
+        spent: 0
+        remaining: 30
+  - task: "Mechanical First Fix"
+    project: "Meridian Admin Building"
+    workpackage: "MEP Installation"
+    resource: "Joe Walker"
+    description: "Ductwork, pipework and plant installation"
+    start: "2027-10-01"
+    estimate: 120
+    status:
+      - date: "2026-11-07"
+        spent: 0
+        remaining: 120
+  - task: "Electrical First Fix"
+    project: "Meridian Admin Building"
+    workpackage: "MEP Installation"
+    resource: "Aisha Khan"
+    description: "Containment, cabling and distribution boards"
+    start: "2027-10-01"
+    estimate: 120
+    status:
+      - date: "2026-11-07"
+        spent: 0
+        remaining: 120
+  - task: "MEP Second Fix"
+    project: "Meridian Admin Building"
+    workpackage: "MEP Installation"
+    resource: "Joe Walker"
+    description: "Terminals, luminaires and controls"
+    start: "2028-03-17"
+    estimate: 80
+    status:
+      - date: "2026-11-07"
+        spent: 0
+        remaining: 80
+  - task: "Partitions & Ceilings"
+    project: "Meridian Admin Building"
+    workpackage: "Internal Fit-out"
+    resource: "Ian Reed"
+    description: "Dry lining, partitions and ceilings"
+    start: "2028-04-03"
+    estimate: 80
+    status:
+      - date: "2026-11-07"
+        spent: 0
+        remaining: 80
+  - task: "Finishes & Joinery"
+    project: "Meridian Admin Building"
+    workpackage: "Internal Fit-out"
+    resource: "Ian Reed"
+    description: "Flooring, decoration and joinery"
+    start: "2028-07-24"
+    estimate: 90
+    status:
+      - date: "2026-11-07"
+        spent: 0
+        remaining: 90
+  - task: "Systems Commissioning"
+    project: "Meridian Admin Building"
+    workpackage: "Commissioning & Handover"
+    resource: "Ben Foster"
+    description: "Commissioning of mechanical, electrical and BMS"
+    start: "2028-09-01"
+    estimate: 60
+    status:
+      - date: "2026-11-07"
+        spent: 0
+        remaining: 60
+  - task: "Snagging"
+    project: "Meridian Admin Building"
+    workpackage: "Commissioning & Handover"
+    resource: "Ben Foster"
+    description: "Defect inspection and rectification"
+    start: "2028-11-24"
+    estimate: 30
+    status:
+      - date: "2026-11-07"
+        spent: 0
+        remaining: 30
+  - task: "O&M Manuals & Handover"
+    project: "Meridian Admin Building"
+    workpackage: "Commissioning & Handover"
+    resource: "Sarah Mitchell"
+    description: "Documentation, training and occupation"
+    start: "2029-01-01"
+    estimate: 25
+    status:
+      - date: "2026-11-07"
+        spent: 0
+        remaining: 25

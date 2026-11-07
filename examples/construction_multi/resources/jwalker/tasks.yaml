@@ -1,0 +1,24 @@
+type: tasks_definitions
+data:
+- task: Mechanical First Fix
+  project: Meridian Admin Building
+  workpackage: MEP Installation
+  resource: Joe Walker
+  description: Ductwork, pipework and plant installation
+  start: '2027-10-01'
+  estimate: 120
+  status:
+  - date: '2026-11-07'
+    spent: 0
+    remaining: 120
+- task: MEP Second Fix
+  project: Meridian Admin Building
+  workpackage: MEP Installation
+  resource: Joe Walker
+  description: Terminals, luminaires and controls
+  start: '2028-03-17'
+  estimate: 80
+  status:
+  - date: '2026-11-07'
+    spent: 0
+    remaining: 80

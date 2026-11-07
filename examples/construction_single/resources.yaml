@@ -1,0 +1,76 @@
+type: "resources_definitions"
+data:
+  - resource: "Sarah Mitchell"
+    uname: "smitchell"
+    start: "2026-01-01"
+    profile: ""
+
+  - resource: "Tom Okafor"
+    uname: "tokafor"
+    start: "2026-01-01"
+    end: "2027-02-28"
+    profile: ""
+
+  - resource: "Priya Nair"
+    uname: "pnair"
+    start: "2026-02-01"
+    end: "2028-03-31"
+    profile: ""
+
+  - resource: "Luca Romano"
+    uname: "lromano"
+    start: "2026-03-01"
+    end: "2029-01-31"
+    profile: ""
+
+  - resource: "Hannah Cole"
+    uname: "hcole"
+    start: "2026-01-01"
+    profile: ""
+
+  - resource: "Dave Brennan"
+    uname: "dbrennan"
+    start: "2027-01-04"
+    profile: ""
+
+  - resource: "Mei Lin"
+    uname: "mlin"
+    start: "2027-02-01"
+    end: "2027-12-31"
+    profile: ""
+
+  - resource: "Carlos Ortega"
+    uname: "cortega"
+    start: "2027-06-01"
+    end: "2028-06-30"
+    profile: ""
+
+  - resource: "Joe Walker"
+    uname: "jwalker"
+    start: "2027-10-01"
+    end: "2029-01-31"
+    profile: ""
+
+  - resource: "Aisha Khan"
+    uname: "akhan"
+    start: "2027-10-01"
+    end: "2029-01-31"
+    profile: ""
+
+  - resource: "Ian Reed"
+    uname: "ireed"
+    start: "2028-04-01"
+    end: "2029-03-31"
+    profile: ""
+
+  - resource: "Ben Foster"
+    uname: "bfoster"
+    start: "2028-09-01"
+    end: "2029-03-31"
+    profile: ""
+
+  - resource: "Grace Turner"
+    uname: "gturner"
+    start: "2027-01-04"
+    profile: ""
+

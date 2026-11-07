@@ -1,0 +1,35 @@
+type: tasks_definitions
+data:
+- task: Bulk Excavation
+  project: Meridian Admin Building
+  workpackage: Groundworks & Substructure
+  resource: Mei Lin
+  description: Excavation and removal of spoil
+  start: '2027-02-01'
+  estimate: 40
+  status:
+  - date: '2026-11-07'
+    spent: 0
+    remaining: 40
+- task: Piling
+  project: Meridian Admin Building
+  workpackage: Groundworks & Substructure
+  resource: Mei Lin
+  description: CFA piling and pile caps
+  start: '2027-03-29'
+  estimate: 45
+  status:
+  - date: '2026-11-07'
+    spent: 0
+    remaining: 45
+- task: Ground Beams & Slab
+  project: Meridian Admin Building
+  workpackage: Groundworks & Substructure
+  resource: Mei Lin
+  description: Ground beams and ground bearing slab
+  start: '2027-05-31'
+  estimate: 40
+  status:
+  - date: '2026-11-07'
+    spent: 0
+    remaining: 40

@@ -1,0 +1,53 @@
+type: tasks_definitions
+data:
+- task: Concept Design
+  project: Meridian Admin Building
+  workpackage: Design & Consent
+  resource: Tom Okafor
+  description: Massing, layout and concept
+  start: '2026-02-02'
+  estimate: 60
+  status:
+  - date: '2026-02-02'
+    spent: 0
+    remaining: 60
+  - date: '2026-04-01'
+    spent: 30
+    remaining: 30
+  - date: '2026-05-29'
+    spent: 60
+    remaining: 0
+- task: Developed Design
+  project: Meridian Admin Building
+  workpackage: Design & Consent
+  resource: Tom Okafor
+  description: Stage 3 architectural design
+  start: '2026-06-01'
+  estimate: 62
+  status:
+  - date: '2026-06-01'
+    spent: 0
+    remaining: 70
+  - date: '2026-07-22'
+    spent: 35
+    remaining: 35
+  - date: '2026-09-11'
+    spent: 70
+    remaining: 0
+- task: Planning Submission
+  project: Meridian Admin Building
+  workpackage: Design & Consent
+  resource: Tom Okafor
+  description: Planning application and response to comments
+  start: '2026-08-03'
+  estimate: 35
+  status:
+  - date: '2026-08-03'
+    spent: 0
+    remaining: 35
+  - date: '2026-09-16'
+    spent: 17
+    remaining: 18
+  - date: '2026-10-30'
+    spent: 35
+    remaining: 0

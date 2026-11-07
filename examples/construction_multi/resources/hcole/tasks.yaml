@@ -1,0 +1,70 @@
+type: tasks_definitions
+data:
+- task: Cost Plan Stage 2
+  project: Meridian Admin Building
+  workpackage: Management & Controls
+  resource: Hannah Cole
+  description: Elemental cost plan at concept design
+  start: '2026-03-02'
+  estimate: 28
+  status:
+  - date: '2026-03-02'
+    spent: 0
+    remaining: 25
+  - date: '2026-03-31'
+    spent: 12
+    remaining: 13
+  - date: '2026-04-30'
+    spent: 25
+    remaining: 0
+- task: Cost Plan Stage 3
+  project: Meridian Admin Building
+  workpackage: Management & Controls
+  resource: Hannah Cole
+  description: Cost plan at developed design
+  start: '2026-09-01'
+  estimate: 32
+  status:
+  - date: '2026-09-01'
+    spent: 0
+    remaining: 30
+  - date: '2026-09-30'
+    spent: 15
+    remaining: 15
+  - date: '2026-10-30'
+    spent: 30
+    remaining: 0
+- task: Tender Documents
+  project: Meridian Admin Building
+  workpackage: Procurement
+  resource: Hannah Cole
+  description: Preparation of tender package
+  start: '2026-08-03'
+  estimate: 32
+  status:
+  - date: '2026-08-03'
+    spent: 0
+    remaining: 30
+  - date: '2026-09-01'
+    spent: 15
+    remaining: 15
+  - date: '2026-09-30'
+    spent: 30
+    remaining: 0
+- task: Tender Evaluation
+  project: Meridian Admin Building
+  workpackage: Procurement
+  resource: Hannah Cole
+  description: Contractor tender evaluation and award
+  start: '2026-11-02'
+  estimate: 35
+  status:
+  - date: '2026-11-02'
+    spent: 0
+    remaining: 35
+  - date: '2026-11-04'
+    spent: 1
+    remaining: 34
+  - date: '2026-11-07'
+    spent: 2
+    remaining: 33

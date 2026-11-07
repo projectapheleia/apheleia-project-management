@@ -1,0 +1,13 @@
+type: tasks_definitions
+data:
+- task: H&S Plan
+  project: Meridian Admin Building
+  workpackage: Management & Controls
+  resource: Grace Turner
+  description: Construction phase plan and site rules
+  start: '2027-01-01'
+  estimate: 20
+  status:
+  - date: '2026-11-07'
+    spent: 0
+    remaining: 20

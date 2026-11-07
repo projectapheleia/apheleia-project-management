@@ -1,0 +1,19 @@
+type: tasks_definitions
+data:
+- task: MEP Scheme
+  project: Meridian Admin Building
+  workpackage: Design & Consent
+  resource: Luca Romano
+  description: Services strategy and plant design
+  start: '2026-04-01'
+  estimate: 60
+  status:
+  - date: '2026-04-01'
+    spent: 0
+    remaining: 60
+  - date: '2026-07-01'
+    spent: 30
+    remaining: 30
+  - date: '2026-09-30'
+    spent: 60
+    remaining: 0

@@ -1,0 +1,19 @@
+type: tasks_definitions
+data:
+- task: Structural Scheme
+  project: Meridian Admin Building
+  workpackage: Design & Consent
+  resource: Priya Nair
+  description: Structural scheme design
+  start: '2026-03-02'
+  estimate: 55
+  status:
+  - date: '2026-03-02'
+    spent: 0
+    remaining: 50
+  - date: '2026-05-16'
+    spent: 25
+    remaining: 25
+  - date: '2026-07-31'
+    spent: 50
+    remaining: 0

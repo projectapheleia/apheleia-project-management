@@ -1,0 +1,46 @@
+type: tasks_definitions
+data:
+- task: Steel Frame
+  project: Meridian Admin Building
+  workpackage: Superstructure
+  resource: Carlos Ortega
+  description: Steel erection levels 0-4
+  start: '2027-06-01'
+  estimate: 90
+  status:
+  - date: '2026-11-07'
+    spent: 0
+    remaining: 90
+- task: Composite Floors
+  project: Meridian Admin Building
+  workpackage: Superstructure
+  resource: Carlos Ortega
+  description: Metal decking and concrete pours
+  start: '2027-10-05'
+  estimate: 60
+  status:
+  - date: '2026-11-07'
+    spent: 0
+    remaining: 60
+- task: Roof Structure
+  project: Meridian Admin Building
+  workpackage: Superstructure
+  resource: Carlos Ortega
+  description: Roof steelwork and plant deck
+  start: '2027-12-28'
+  estimate: 30
+  status:
+  - date: '2026-11-07'
+    spent: 0
+    remaining: 30
+- task: Roofing
+  project: Meridian Admin Building
+  workpackage: Envelope
+  resource: Carlos Ortega
+  description: Roof membrane and rooflights
+  start: '2028-02-08'
+  estimate: 30
+  status:
+  - date: '2026-11-07'
+    spent: 0
+    remaining: 30

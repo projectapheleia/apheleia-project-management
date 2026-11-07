@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 import argparse
+import sys
 from pathlib import Path
 
-from apheleia_project_management import import_from_yaml, create_containers, export_to_html
+from apheleia_project_management import create_containers, export_to_html, import_from_yaml
+
 
 def main():
     parser = argparse.ArgumentParser(description="Apheleia Project Management Report Tool")
@@ -12,11 +14,15 @@ def main():
 
     args = parser.parse_args()
 
-    # Parse the input data
-    data = import_from_yaml(Path(args.input).resolve())
+    try:
+        # Parse the input data
+        data = import_from_yaml(Path(args.input).resolve())
 
-    # Create data containers
-    create_containers(Path(args.html).resolve(), data)
+        # Create data containers
+        create_containers(Path(args.html).resolve(), data)
+    except ValueError as e:
+        print(f"ERROR : {e}", file=sys.stderr)
+        sys.exit(1)
 
     # Export HTML
     export_to_html(Path(args.html).resolve())

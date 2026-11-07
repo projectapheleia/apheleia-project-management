@@ -1,5 +1,6 @@
-import pandas as pd
 import re
+
+import pandas as pd
 
 # Get today's date - save in case script cross day boundary
 today = pd.Timestamp.now().normalize()
@@ -27,6 +28,35 @@ def smart_date_converter(value : (str | None)) -> (str | pd.Timestamp | None):
     except (ValueError, TypeError):
         return value
 
+def milestone_badges(dates) -> list:
+    """
+    Html badges saying whether each milestone has passed, is current or is upcoming.
+
+    The current milestone is the next one due, i.e. the first dated today or later. The dates are
+    those of a single project, in any order.
+
+    :param dates: Milestone dates
+    :type dates: iterable
+    :return: List of html strings, one per date, in the same order as the dates
+    :rtype: list
+    """
+
+    dates = pd.Series(pd.to_datetime(list(dates), errors="coerce"))
+    upcoming = dates[dates >= today]
+    current = upcoming.idxmin() if len(upcoming) else None
+
+    badges = []
+    for i, d in dates.items():
+        if pd.isna(d):
+            badges.append("")
+        elif i == current:
+            badges.append('<span class="badge badge-current">&#9679; Current milestone</span>')
+        elif d < today:
+            badges.append('<span class="badge badge-passed">Passed</span>')
+        else:
+            badges.append('<span class="badge badge-upcoming">Upcoming</span>')
+    return badges
+
 def value_to_filename(value : str) -> str:
     """
     Convert a string to a valid filename
@@ -44,5 +74,6 @@ def value_to_filename(value : str) -> str:
 __all__ = [
     "today",
     "smart_date_converter",
+    "milestone_badges",
     "value_to_filename"
 ]

@@ -1,0 +1,24 @@
+type: tasks_definitions
+data:
+- task: Site Set-up
+  project: Meridian Admin Building
+  workpackage: Groundworks & Substructure
+  resource: Dave Brennan
+  description: Hoarding, cabins and temporary works
+  start: '2027-02-01'
+  estimate: 15
+  status:
+  - date: '2026-11-07'
+    spent: 0
+    remaining: 15
+- task: Facade & Glazing
+  project: Meridian Admin Building
+  workpackage: Envelope
+  resource: Dave Brennan
+  description: Curtain wall and rainscreen cladding
+  start: '2027-11-01'
+  estimate: 100
+  status:
+  - date: '2026-11-07'
+    spent: 0
+    remaining: 100

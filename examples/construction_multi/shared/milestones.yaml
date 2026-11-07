@@ -1,0 +1,38 @@
+type: "milestones_definitions"
+data:
+  - milestone: "C0"
+    description: "Project Approval / Funding Release"
+
+  - milestone: "C1"
+    description: "Design Freeze"
+
+  - milestone: "C2"
+    description: "Planning Consent Granted"
+
+  - milestone: "C3"
+    description: "Main Contractor Appointed"
+
+  - milestone: "C4"
+    description: "Site Mobilisation"
+
+  - milestone: "C5"
+    description: "Substructure Complete"
+
+  - milestone: "C6"
+    description: "Structure Topped Out"
+
+  - milestone: "C7"
+    description: "Building Weathertight"
+
+  - milestone: "C8"
+    description: "MEP First Fix Complete"
+
+  - milestone: "C9"
+    description: "Commissioning Complete"
+
+  - milestone: "C10"
+    description: "Practical Completion"
+
+  - milestone: "C11"
+    description: "Handover and Occupation"
+

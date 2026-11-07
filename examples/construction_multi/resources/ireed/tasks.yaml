@@ -1,0 +1,24 @@
+type: tasks_definitions
+data:
+- task: Partitions & Ceilings
+  project: Meridian Admin Building
+  workpackage: Internal Fit-out
+  resource: Ian Reed
+  description: Dry lining, partitions and ceilings
+  start: '2028-04-03'
+  estimate: 80
+  status:
+  - date: '2026-11-07'
+    spent: 0
+    remaining: 80
+- task: Finishes & Joinery
+  project: Meridian Admin Building
+  workpackage: Internal Fit-out
+  resource: Ian Reed
+  description: Flooring, decoration and joinery
+  start: '2028-07-24'
+  estimate: 90
+  status:
+  - date: '2026-11-07'
+    spent: 0
+    remaining: 90
