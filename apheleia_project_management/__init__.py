@@ -14,7 +14,7 @@ from ._utils import smart_date_converter
 from ._workpackages import WorkPackages
 
 # Add version
-__version__: str = "0.1.0"
+__version__: str = "0.2.0"
 
 def import_from_yaml(path : Path) -> None:
     """

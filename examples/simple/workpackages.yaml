@@ -3,6 +3,7 @@ data:
   - workpackage: "CPU Development"
     project: "Project Alpha"
     description: "CPU development for project alpha"
+    milestone: "M5"       # Must end by M5 (2026-09-30). Allocated to 2026-12, so the report flags it
     allocations:
         - start: "2026-01"
           end: "2026-06"
@@ -20,6 +21,7 @@ data:
   - workpackage: "SOC Development"
     project: "Project Alpha"
     description: "SOC development for project alpha"
+    milestone: "M10"      # Must end by M10 (2026-12-31). Allocated to 2026-11, so it is within
     allocations:
         - start: "2026-04"
           end: "2026-05"

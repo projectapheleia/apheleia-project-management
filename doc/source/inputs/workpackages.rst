@@ -30,6 +30,9 @@ Fields
    * - ``description``
      - No
      - Description of the workpackage
+   * - ``milestone``
+     - No
+     - Milestone the workpackage is working towards, see below
    * - ``allocations``
      - Yes
      - List of resource allocations, see below
@@ -75,6 +78,17 @@ For example an allocation of ``0.5`` from ``2026-07`` to ``2026-09`` is 3 months
 A resource can have several allocations to the same workpackage, for example to vary their allocation over \
 time, and can be allocated to many workpackages at once. The start and end of the workpackage are taken \
 from the earliest and latest of its allocations.
+
+Milestones
+----------
+
+A workpackage can be associated with a :doc:`milestone <milestones>` using ``milestone``. The workpackage must \
+end by the date the project gives this milestone, compared to the month. Starting before the previous milestone \
+is fine.
+
+Workpackages that end after their milestone, or whose milestone has no date in the project, are marked \
+``OUTSIDE MILESTONE`` with the reason in the workpackage tables, and listed under *Workpackages Outside Milestone* \
+on the project summary. Workpackages with no ``milestone`` are not checked.
 
 Example
 -------

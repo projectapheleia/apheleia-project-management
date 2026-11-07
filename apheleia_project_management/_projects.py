@@ -8,7 +8,7 @@ from ._charts import gantt
 from ._containers import Container, containers
 from ._tasks import milestone_task_summary, tasks_over_estimate
 from ._utils import milestone_badges, smart_date_converter, today
-from ._workpackages import create_allocation_chart
+from ._workpackages import MILESTONE_HELP, check_milestones, create_allocation_chart, workpackages_outside_milestone
 
 
 class Project(Container):
@@ -87,6 +87,18 @@ class Project(Container):
         else:
             tab.add_paragraph("Task Status by Milestone", "No tasks have been recorded for this project.")
 
+        # Workpackages outside their milestone
+        wp_all = [v.summary_df for v in containers.get("workpackage", {}).values() if (v.summary_df["project"] == self.name).any()]
+        if wp_all:
+            wp_df = pd.concat(wp_all, ignore_index=True)
+            wp_df = wp_df[wp_df["project"] == self.name]
+            outside = workpackages_outside_milestone(wp_df)
+            if outside.empty:
+                tab.add_paragraph("Workpackages Outside Milestone", "All workpackages with a milestone fall within its range.",
+                                  help=MILESTONE_HELP)
+            else:
+                tab.add_table("Workpackages Outside Milestone", outside, help=MILESTONE_HELP)
+
         # Add Timeline gantt
         tab = self.html.add_tab("Timeline")
         tab.add_chart("Project Timeline", gantt(
@@ -119,7 +131,7 @@ class Project(Container):
 
             tab = self.html.add_tab("Workpackages")
             tab.add_chart("Workpackage Timeline", gantt(
-                                                    wp_summary_df,
+                                                    check_milestones(wp_summary_df),
                                                     "",
                                                     ("start", "Start Date"),
                                                     ("end", "End Date"),
@@ -127,10 +139,11 @@ class Project(Container):
                                                     markers={"Today" : today},
                                                     description="description",
                                                     link_key="workpackage",
+                                                    milestones=("milestone", "milestone date"),
                                                 )
             )
             tab.add_chart("Workpackage Allocations", create_allocation_chart(wp_raw_df, "allocations.resource"))
-            tab.add_table("Workpackages", wp_summary_df)
+            tab.add_table("Workpackages", check_milestones(wp_summary_df), help=MILESTONE_HELP)
 
         # Add details table
         tab = self.html.add_tab("Details")

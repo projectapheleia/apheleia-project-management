@@ -1,5 +1,10 @@
 # Changelog
 
+## [v0.2.0] - 2026-11-07
+
+### Added
+ - Workpackages: optional `milestone`. The workpackage must end by the milestone date; starting early is fine. Workpackages that end after it, or whose milestone has no date in the project, are marked `OUTSIDE MILESTONE` in the workpackage tables and listed on the project summary. The milestone is marked with a diamond on the workpackage's bar in the workpackage timelines, and on the bars of its tasks in the task timelines. The `simple` example shows one workpackage within and one outside its milestone.
+
 ## [v0.1.0] - 2026-11-07
 
 First release.

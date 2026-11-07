@@ -200,7 +200,24 @@ def create_task_timeline(df: pd.DataFrame, markers=None) -> px.timeline:
                             axis=1
     )
 
-    # 4. Create the chart
+    # 4. Milestone of the task's workpackage, if it has one
+    names, dates = [], []
+    for r in df.itertuples():
+        name, date = None, pd.NaT
+        wp = containers.get("workpackage", {}).get(r.workpackage)
+        if wp is not None and wp.summary_df is not None and "milestone" in wp.summary_df.columns:
+            given = wp.summary_df.loc[wp.summary_df["project"] == r.project, "milestone"].dropna()
+            if len(given) and isinstance(given.iloc[0], str):
+                ms = project_milestones(r.project)
+                due = ms[ms["milestone"] == given.iloc[0]]
+                if not due.empty:
+                    name, date = given.iloc[0], due["date"].iloc[0]
+        names.append(name)
+        dates.append(date)
+    df["milestone"] = names
+    df["milestone date"] = pd.to_datetime(pd.Series(dates, index=df.index))
+
+    # 5. Create the chart
     fig = gantt(
                                             df,
                                             "",
@@ -210,6 +227,7 @@ def create_task_timeline(df: pd.DataFrame, markers=None) -> px.timeline:
                                             markers=markers,
                                             description="description",
                                             link_key="task",
+                                            milestones=("milestone", "milestone date"),
                                         )
 
     return fig

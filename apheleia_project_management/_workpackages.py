@@ -5,8 +5,26 @@ import plotly.express as px
 
 from ._charts import SCALES, aggregate_by_period, color_map, gantt, stacked_bar
 from ._containers import Container, containers
-from ._tasks import create_task_progress_by_task, create_task_timeline, task_summary_stats, task_summary_table
+from ._tasks import (
+    MISSING,
+    create_task_progress_by_task,
+    create_task_timeline,
+    project_milestones,
+    task_summary_stats,
+    task_summary_table,
+)
 from ._utils import smart_date_converter, today
+
+OUTSIDE = '<span class="badge badge-missing">OUTSIDE MILESTONE</span>'
+""" Shown against a workpackage whose dates do not fall within its milestone """
+
+WITHIN = '<span class="badge badge-upcoming">Within milestone</span>'
+""" Shown against a workpackage whose dates fall within its milestone """
+
+MILESTONE_HELP = ("Milestone is the milestone the workpackage is working towards. The workpackage must end by the date of "
+                  "this milestone, to the month; starting earlier is fine. Workpackages that end after their milestone, or "
+                  "whose milestone has no date in the project, are marked OUTSIDE MILESTONE.")
+""" Hover guidance for the milestone columns """
 
 
 class Workpackage(Container):
@@ -35,7 +53,7 @@ class Workpackage(Container):
         # Add Timeline to html
         tab = self.html.add_tab("Timelines")
         tab.add_chart("Workpackage Timelines", gantt(
-                                                        self.summary_df,
+                                                        check_milestones(self.summary_df),
                                                         "",
                                                         ("start", "Start Date"),
                                                         ("end", "End Date"),
@@ -43,8 +61,15 @@ class Workpackage(Container):
                                                         markers={"Today" : today},
                                                         description="description",
                                                         link_key="workpackage",
+                                                        milestones=("milestone", "milestone date"),
                                                     )
         )
+
+        # Milestone
+        checked = check_milestones(self.summary_df)
+        if checked["milestone"].notna().any():
+            tab.add_table("Milestone", checked[["workpackage", "milestone", "milestone range", "milestone check"]]
+                          .rename(columns={"milestone check" : "check"}), help=MILESTONE_HELP)
 
         # Add Resource allocation stacked bar to html
         tab = self.html.add_tab("Allocations")
@@ -123,7 +148,8 @@ class WorkPackages(Container):
                     "allocations.end",
                     "allocations.resource",
                     "allocations.allocation",
-                    "description"
+                    "description",
+                    "milestone"
                 ]
 
         self.check_definitions(definitions, "workpackage")
@@ -131,7 +157,7 @@ class WorkPackages(Container):
         # No workpackages defined
         if not definitions:
             self.imported_df = pd.DataFrame(columns=columns)
-            self.summary_df = pd.DataFrame(columns=["workpackage", "project", "start", "end", "resources", "effort", "description"])
+            self.summary_df = pd.DataFrame(columns=["workpackage", "project", "start", "end", "resources", "effort", "description", "milestone"])
             return
 
         # Every workpackage needs at least one allocation
@@ -189,7 +215,7 @@ class WorkPackages(Container):
         # Add Timeline to html
         tab = self.html.add_tab("Timelines")
         tab.add_chart("Workpackage Timelines", gantt(
-                                                        self.summary_df,
+                                                        check_milestones(self.summary_df),
                                                         "",
                                                         ("start", "Start Date"),
                                                         ("end", "End Date"),
@@ -197,6 +223,7 @@ class WorkPackages(Container):
                                                         markers={"Today" : today},
                                                         description="description",
                                                         link_key="workpackage",
+                                                        milestones=("milestone", "milestone date"),
                                                     )
         )
 
@@ -206,9 +233,77 @@ class WorkPackages(Container):
 
         # Add table to html
         tab = self.html.add_tab("Workpackages")
-        tab.add_table("Workpackages", self.summary_df)
+        tab.add_table("Workpackages", check_milestones(self.summary_df), help=MILESTONE_HELP)
 
         super().export_html()
+
+def check_milestones(summary_df : pd.DataFrame) -> pd.DataFrame:
+    """
+    Check each workpackage falls within the range of its milestone
+
+    A workpackage must end by the date of its milestone; starting early is fine. Allocations are
+    in whole months so the comparison is made to the month.
+    A workpackage with a milestone that the project has not dated cannot be checked and is
+    also flagged. Workpackages with no milestone are not checked.
+
+    :param summary_df: One row per workpackage, with project, start, end and milestone columns
+    :type summary_df: pd.DataFrame
+    :return: Copy of the dataframe with milestone range, milestone check (html) and outside (bool) and milestone date columns
+    :rtype: pd.DataFrame
+    """
+
+    df = summary_df.copy()
+    ranges, checks, outside, dates = [], [], [], []
+
+    for r in df.itertuples():
+        milestone = getattr(r, "milestone", None)
+        if not isinstance(milestone, str) or milestone.strip() == "":
+            ranges.append("")
+            checks.append("")
+            outside.append(False)
+            dates.append(pd.NaT)
+            continue
+
+        ms = project_milestones(r.project)
+        due = ms[ms["milestone"] == milestone]
+        if due.empty:
+            ranges.append(MISSING)
+            checks.append(f"{OUTSIDE} {milestone} has no date in {r.project}")
+            outside.append(True)
+            dates.append(pd.NaT)
+            continue
+
+        end = due["date"].iloc[0]
+        ranges.append(f"by {end.date()}")
+        dates.append(end)
+
+        problems = []
+        if pd.notna(r.end) and r.end.to_period("M") > end.to_period("M"):
+            problems.append(f"ends {r.end:%Y-%m}, after {milestone} ({end:%Y-%m})")
+
+        checks.append(f"{OUTSIDE} {'; '.join(problems)}" if problems else WITHIN)
+        outside.append(bool(problems))
+
+    df["milestone range"] = ranges
+    df["milestone check"] = checks
+    df["outside"] = outside
+    df["milestone date"] = pd.to_datetime(pd.Series(dates, index=df.index))
+    return df
+
+def workpackages_outside_milestone(summary_df : pd.DataFrame) -> pd.DataFrame:
+    """
+    The workpackages that fall outside the range of their milestone
+
+    :param summary_df: One row per workpackage
+    :type summary_df: pd.DataFrame
+    :return: Workpackage, milestone, milestone range, start, end and the reason it is outside
+    :rtype: pd.DataFrame
+    """
+
+    df = check_milestones(summary_df)
+    df = df[df["outside"]]
+    df = df[["workpackage", "milestone", "milestone range", "start", "end", "milestone check"]]
+    return df.rename(columns={"milestone check" : "problem"}).reset_index(drop=True)
 
 def summarize_df(df : pd.DataFrame) -> pd.DataFrame:
     """
@@ -226,7 +321,8 @@ def summarize_df(df : pd.DataFrame) -> pd.DataFrame:
         'allocations.end': 'max',
         'allocations.resource': lambda x: list(set(x)),
         'allocations.allocation': 'sum',
-        'description': 'first'
+        'description': 'first',
+        'milestone': 'first'
     }
 
     # Group and apply
@@ -321,5 +417,7 @@ __all__ = [
     "Workpackage",
     "WorkPackages",
     "summarize_df",
+    "check_milestones",
+    "workpackages_outside_milestone",
     "create_allocation_chart",
 ]

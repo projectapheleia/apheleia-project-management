@@ -1,6 +1,6 @@
 [project]
 name = "apheleia-project-management"
-version = "0.1.0"
+version = "0.2.0"
 description = "Plan projects in YAML and generate interactive HTML reports of timelines, resource allocation and task progress"
 authors = [{name = "avl", email = "avl@projectapheleia.net"}]
 maintainers = [{name = "avl", email = "avl@projectapheleia.net"}]

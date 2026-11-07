@@ -187,7 +187,8 @@ def gantt(  df : pd.DataFrame,
             description: str=None,
             link_key: str=None,
             colors: dict=None,
-            show_legend: bool=False) -> px.timeline:
+            show_legend: bool=False,
+            milestones: tuple[str, str]=None) -> px.timeline:
     """
     Generate Gantt chart from dataframe
 
@@ -214,6 +215,9 @@ def gantt(  df : pd.DataFrame,
     :type colors: dict
     :param show_legend: Show a key of the colour of each y value
     :type show_legend: bool
+    :param milestones: Optional tuple of the columns holding the milestone name and milestone date of each
+                       row. A diamond is drawn on the row at the date of the milestone
+    :type milestones: tuple[str, str]
     :return: Gantt chart
     :rtype: px.timeline
     """
@@ -288,6 +292,20 @@ def gantt(  df : pd.DataFrame,
 
     style_axes(fig)
     _shade_bars(fig, BAR_WIDTH)
+
+    # Milestone each row is working towards
+    if milestones is not None and milestones[0] in df_new.columns and milestones[1] in df_new.columns:
+        ms = df_new[df_new[milestones[1]].notna()]
+        if not ms.empty:
+            fig.add_trace(go.Scatter(
+                x=ms[milestones[1]],
+                y=ms[y[0]],
+                mode="markers",
+                marker=dict(symbol="diamond", size=16, color="#d62839", line=dict(color="white", width=1.5)),
+                customdata=ms[[milestones[0], milestones[1]]].assign(**{milestones[1] : ms[milestones[1]].dt.strftime("%Y-%m-%d")}).to_numpy(),
+                hovertemplate="<b>%{y}</b><br>Milestone %{customdata[0]}: %{customdata[1]}<extra></extra>",
+                showlegend=False,
+            ))
 
     fig.update_layout(
         barmode="overlay",

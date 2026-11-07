@@ -9,6 +9,8 @@ data:
           date: "2026-01-14"
         - milestone: "M1"
           date: "2026-02-01"
+        - milestone: "M5"
+          date: "2026-09-30"
         - milestone: "M10"
           date: "2026-12-31"
 
