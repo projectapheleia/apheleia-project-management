@@ -1,6 +1,6 @@
 [project]
 name = "apheleia-project-management"
-version = "0.2.0"
+version = "1.0.0"
 description = "Plan projects in YAML and generate interactive HTML reports of timelines, resource allocation and task progress"
 authors = [{name = "avl", email = "avl@projectapheleia.net"}]
 maintainers = [{name = "avl", email = "avl@projectapheleia.net"}]
@@ -10,7 +10,7 @@ license-files = ["LICENSE"]
 readme = "README.md"
 requires-python = ">=3.10"
 classifiers = [
-  "Development Status :: 4 - Beta",
+  "Development Status :: 5 - Production/Stable",
   "Environment :: Console",
   "Intended Audience :: Developers",
   "Intended Audience :: End Users/Desktop",
@@ -43,8 +43,6 @@ Changelog = "https://github.com/projectapheleia/apheleia-project-management/blob
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0",
-    "mypy>=0.910",
-    "black>=22.3.0",
     "sphinx>=8.1.3",
     "sphinx_rtd_theme>=3.0.2",
     "ruff>=0.11.0"

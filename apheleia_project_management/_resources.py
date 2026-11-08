@@ -155,6 +155,23 @@ def availability_text(value) -> str:
 
     return "" if pd.isna(value) else f"{value:g}%"
 
+def _period_bounds(df : pd.DataFrame) -> tuple[pd.Series, pd.Series]:
+    """
+    Start and end of each availability period, with no start or end as the earliest or latest date there can be
+
+    The dates are converted to nanoseconds first, the resolution of pd.Timestamp.min and max, since filling
+    dates of another resolution with them is deprecated in pandas and will fail in pandas 4.
+
+    :param df: Resource dataframe, one row per period
+    :type df: pd.DataFrame
+    :return: Start and end of each period
+    :rtype: tuple[pd.Series, pd.Series]
+    """
+
+    start = pd.to_datetime(df["start"]).astype("datetime64[ns]").fillna(pd.Timestamp.min)
+    end = pd.to_datetime(df["end"]).astype("datetime64[ns]").fillna(pd.Timestamp.max)
+    return start, end
+
 def availability_on(df : pd.DataFrame, date : pd.Timestamp) -> pd.Series:
     """
     Availability of each resource on a date
@@ -167,8 +184,7 @@ def availability_on(df : pd.DataFrame, date : pd.Timestamp) -> pd.Series:
     :rtype: pd.Series
     """
 
-    start = pd.to_datetime(df["start"]).fillna(pd.Timestamp.min)
-    end = pd.to_datetime(df["end"]).fillna(pd.Timestamp.max)
+    start, end = _period_bounds(df)
     covers = (start <= date) & (end >= date)
     value = df["availability"].where(covers).astype(float)
     return value.groupby(df["resource"], sort=False).max()
@@ -403,9 +419,8 @@ def monthly_availability(df : pd.DataFrame, months) -> pd.DataFrame:
     :rtype: pd.DataFrame
     """
 
-    start = pd.to_datetime(df["start"]).fillna(pd.Timestamp.min)
-    end = pd.to_datetime(df["end"]).fillna(pd.Timestamp.max)
-    share = df["availability"].astype(float) / 100
+    start, end = _period_bounds(df)
+    share =df["availability"].astype(float) / 100
     day = pd.Timedelta(days=1)
 
     frames = []

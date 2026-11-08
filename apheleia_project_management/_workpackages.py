@@ -18,7 +18,7 @@ from ._tasks import (
     task_summary_stats,
     task_summary_table,
 )
-from ._utils import DAYS_PER_MONTH, format_months, parse_effort, smart_date_converter, today_markers
+from ._utils import DAYS_PER_MONTH, format_months, parse_effort, smart_date_converter, today_markers, with_columns
 
 OUTSIDE = '<span class="badge badge-missing">OUTSIDE MILESTONE</span>'
 """ Shown against a workpackage whose dates do not fall within its milestone """
@@ -241,8 +241,7 @@ class WorkPackages(Container):
         # Create a summary dataframe
         df = pd.DataFrame(columns=columns)
         self.validate_data(self.imported_df, df)
-        df = pd.concat([self.imported_df, df], ignore_index=True)
-        df = df[columns]
+        df = with_columns(self.imported_df, columns)[columns]
         self.summary_df = summarize_df(df)
         self.summary_df["estimate"] = self.summary_df["workpackage"].map(estimates).astype(float)
 
@@ -440,7 +439,7 @@ def check_task_effort(summary_df : pd.DataFrame) -> pd.DataFrame:
             task_spent=("spent", "sum"),
         )
 
-    totals = df[["workpackage"]].join(totals, on="workpackage").drop(columns="workpackage").fillna(0)
+    totals = df[["workpackage"]].join(totals, on="workpackage").drop(columns="workpackage").astype(float).fillna(0)
     df["tasks"] = totals["tasks"].astype(int)
     df["no_estimate"] = totals["no_estimate"].astype(int)
     for column in ("task_estimates", "task_forecast", "task_spent"):
@@ -576,7 +575,8 @@ def summarize_df(df : pd.DataFrame) -> pd.DataFrame:
     agg_rules = {
         'allocations.start': 'min',
         'allocations.end': 'max',
-        'allocations.resource': lambda x: list(set(x)),
+        # Unique, in the order given, so the report is the same every time it is made
+        'allocations.resource': lambda x: list(dict.fromkeys(x)),
         'allocations.allocation': 'sum',
         'description': 'first',
         'milestone': 'first'

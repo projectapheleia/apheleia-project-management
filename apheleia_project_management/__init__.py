@@ -16,7 +16,7 @@ from ._utils import set_data_dates, smart_date_converter
 from ._workpackages import WorkPackages
 
 # Add version
-__version__: str = "0.2.0"
+__version__: str = "1.0.0"
 
 NOT_DATES = {"estimate"}
 """ Fields of a definition that are never converted to dates """

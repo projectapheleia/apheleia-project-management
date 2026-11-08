@@ -109,6 +109,11 @@ apheleia_project_report --check --input <input directory>
 
 ## 📦 Installation
 
+### Install from PyPI
+```sh
+pip install apheleia-project-management
+```
+
 ### Install from Source
 ```sh
 git clone https://github.com/projectapheleia/apheleia-project-management.git

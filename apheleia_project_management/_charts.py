@@ -267,6 +267,30 @@ LEGEND_OUTSIDE = dict(x=1.01, xanchor="left", y=1, yanchor="top",
                       bgcolor="rgba(255,255,255,0.9)", bordercolor="#b7c2d6", borderwidth=1)
 """ Legend placed to the right of the plot """
 
+def _fill_end(df : pd.DataFrame, value : pd.Timestamp) -> pd.DataFrame:
+    """
+    Copy of a dataframe with any missing end date set to a value
+
+    A column of dates and missing values is held as objects. Its type is inferred once filled, so a column of dates
+    becomes dates, as fillna did before pandas deprecated changing the type of the column it fills.
+
+    :param df: Dataframe, with or without an end column
+    :type df: pd.DataFrame
+    :param value: Date given to rows with no end
+    :type value: pd.Timestamp
+    :return: Dataframe with the end dates filled
+    :rtype: pd.DataFrame
+    """
+
+    out = df.copy()
+    if "end" not in out.columns:
+        return out
+    if pd.api.types.is_datetime64_any_dtype(out["end"]):
+        out["end"] = out["end"].fillna(value)
+    else:
+        out["end"] = pd.Series([value if pd.isna(v) else v for v in out["end"]], index=out.index, dtype=object).infer_objects()
+    return out
+
 def gantt(  df : pd.DataFrame,
             title : str,
             x_start : tuple[str, str],
@@ -322,9 +346,9 @@ def gantt(  df : pd.DataFrame,
     # Create a new copy of the date
     # Insert an end date (max of the default and largest in data)
     horizon = default_end_date()
-    df_new = df.fillna(value={"end": horizon})
+    df_new = _fill_end(df, horizon)
     default_end = max(df_new[x_end[0]].max(), horizon)
-    df_new = df.fillna(value={"end": default_end})
+    df_new = _fill_end(df, default_end)
 
     # Hover text, built explicitly so it is always populated
     def fmt(v, empty):
@@ -335,7 +359,7 @@ def gantt(  df : pd.DataFrame,
     df_new["_end"] = [fmt(v, "") for v in df_new[x_end[0]]]
     df_new.loc[df[x_end[0]].isna().to_numpy(), "_end"] = "open ended"
     if description is not None and description in df_new.columns:
-        df_new["_desc"] = df_new[description].fillna("").astype(str)
+        df_new["_desc"] = df_new[description].astype(object).fillna("").astype(str)
     else:
         df_new["_desc"] = ""
     if opacity is not None and opacity in df_new.columns:

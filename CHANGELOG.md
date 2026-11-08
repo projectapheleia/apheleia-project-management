@@ -1,6 +1,8 @@
 # Changelog
 
-## [Unreleased]
+## [v1.0.0] - 2026-11-08
+
+First stable release.
 
 ### Added
  - `apheleia_project_report --check` checks the input without generating a report. It reads and validates the input exactly as a report does, prints any `ERROR :` and exits with status 1, or prints `OK : input checked` with the number of each type of definition and exits with status 0. Nothing is written, so `--html` is not needed.
@@ -46,8 +48,13 @@
  - Table column filters did not update the table until it was sorted. They now update as you type.
  - The workpackage tables showed the internal `outside` and `milestone date` columns used by the milestone check. They are no longer shown.
  - The chart colours of a non default theme were not applied on page load if the browser had already finished loading by the time the page script ran, so a saved theme could show charts in the default colours until it was chosen again.
+ - The resources of a workpackage, in the workpackage tables, were listed in a different order each time the report was made, so the same plan did not always give the same report. They are now listed in the order they are allocated.
+ - With pandas 2, every report printed `FutureWarning`s about deprecated pandas behaviour. With pandas 3 the same code gave hidden deprecation warnings, for behaviour that pandas 4 will turn into errors. The code no longer relies on any of it, and the reports are unchanged.
 
 ### Changed
+ - Development status is now Production/Stable.
+ - README and documentation: installing from PyPI with `pip install apheleia-project-management` is given first, ahead of installing from source.
+ - `black` and `mypy` are no longer installed by the `dev` extras, as neither is used. Linting is done by `ruff`.
  - The output directory and its subdirectories are created when the HTML is written, rather than when the input is read, so an input that is rejected leaves nothing behind.
  - examples: every error case now runs `apheleia_project_report --check` and passes only if it fails with the expected `ERROR :` message and writes nothing, instead of generating a report into a directory and checking no `index.html` appeared.
  - plotly is limited to versions below 8 (`plotly>=6.6.0,<8`), as the charts now set plotly properties directly, so a new major version is tried before it is allowed. The examples give the same charts with plotly 6.6.0 and 7.1.0.

@@ -10,7 +10,7 @@ from ._charts import gantt
 from ._containers import Container, containers
 from ._resources import add_over_allocation
 from ._tasks import TASK_ESTIMATE_HELP, add_over_estimate, milestone_task_summary
-from ._utils import milestone_badges, milestone_dates_text, smart_date_converter, today_markers
+from ._utils import milestone_badges, milestone_dates_text, smart_date_converter, today_markers, with_columns
 from ._workpackages import (
     ESTIMATE_HELP,
     MILESTONE_HELP,
@@ -129,8 +129,7 @@ class Project(Container):
 
         # Summary Table
         #   - remove milestones
-        df = pd.DataFrame(columns=["project", "start", "end", "description"])
-        df = pd.concat([self.imported_df, df], ignore_index=True)
+        df = with_columns(self.imported_df, ["project", "start", "end", "description"])
         if "milestones" in df.columns:
             df = df.drop(columns=["milestones"]).drop_duplicates()
             df = df.reset_index(drop=True)
@@ -318,8 +317,7 @@ class Projects(Container):
 
         # Summary Table
         #   - remove milestones
-        df = pd.DataFrame(columns=["project", "start", "end", "description"])
-        df = pd.concat([self.imported_df, df], ignore_index=True)
+        df = with_columns(self.imported_df, ["project", "start", "end", "description"])
         if "milestones" in df.columns:
             df = df.drop(columns=["milestones"]).drop_duplicates()
             df = df.reset_index(drop=True)

@@ -16,6 +16,15 @@ In order to build the documentation you will also need:
 
 - `Graphviz <https://graphviz.org/download/>`_
 
+Installing From PyPI
+--------------------
+
+Apheleia Project Management is available on `PyPI <https://pypi.org/project/apheleia-project-management/>`_.
+
+.. code-block:: bash
+
+    pip install apheleia-project-management
+
 Installing From Source
 ----------------------
 

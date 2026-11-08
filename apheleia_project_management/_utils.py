@@ -277,6 +277,26 @@ def format_days(days : float) -> str:
     """
     return format_months(days / DAYS_PER_MONTH)
 
+def with_columns(df : pd.DataFrame, columns : list) -> pd.DataFrame:
+    """
+    Copy of a dataframe with any of the columns it does not have added at the end, empty, and the index reset
+
+    The same as concatenating an empty dataframe with the columns, which pandas has deprecated
+
+    :param df: Dataframe
+    :type df: pd.DataFrame
+    :param columns: Columns the result must have
+    :type columns: list
+    :return: Dataframe with at least the columns
+    :rtype: pd.DataFrame
+    """
+
+    out = df.reset_index(drop=True)
+    for col in columns:
+        if col not in out.columns:
+            out[col] = pd.Series(None, index=out.index, dtype=object)
+    return out
+
 def value_to_filename(value : str) -> str:
     """
     Convert a string to a valid filename
