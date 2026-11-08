@@ -1,0 +1,15 @@
+type: "workpackages_definitions"
+data:
+  - workpackage: "Units"
+    project: "Project Units"
+    description: "Tasks with effort in different units"
+    estimate: "3 mm"
+    allocations:
+        - start: "2026-09"
+          end: "2027-02"
+          resource: "Mickey Mouse"
+          allocation: 0.5
+        - start: "2026-09"
+          end: "2027-02"
+          resource: "Daffy Duck"
+          allocation: 0.5

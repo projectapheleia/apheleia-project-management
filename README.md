@@ -21,6 +21,7 @@ diffed and merged like any other source file.
 
 - Project timelines, with milestones and today's date marked
 - Task status by milestone, and tasks that have grown past their original estimate
+- Task effort in man-days, weeks, months or years, and tasks shared by several people
 - Workpackage timelines and the effort allocated to each
 - Resource availability, and how each resource is allocated across projects and workpackages
 - Task timelines, progress and forecast completion dates based on effort spent and remaining
@@ -156,6 +157,11 @@ make clean
 | Example | Description |
 | --- | --- |
 | [simple](https://github.com/projectapheleia/apheleia-project-management/tree/main/examples/simple) | Minimal semiconductor project, one file per type. The best starting point for a new plan |
+| [milestones](https://github.com/projectapheleia/apheleia-project-management/tree/main/examples/milestones) | Single date milestones, milestone windows and relative milestone dates, and the mistakes that are caught |
+| [workpackages](https://github.com/projectapheleia/apheleia-project-management/tree/main/examples/workpackages) | Workpackage estimates (none, generous, low and exact), and the mistakes that are caught |
+| [tasks](https://github.com/projectapheleia/apheleia-project-management/tree/main/examples/tasks) | Good and bad task estimates, tasks shared by several people, effort in md, mw, mm and my, and the mistakes that are caught |
+| [resources](https://github.com/projectapheleia/apheleia-project-management/tree/main/examples/resources) | Availability periods: leave, part time working, people joining and leaving, and the mistakes that are caught |
+| [format](https://github.com/projectapheleia/apheleia-project-management/tree/main/examples/format) | Two reports with their own title, logo and themes (`eighties` and `noir`), and the mistakes that are caught |
 | [construction_single](https://github.com/projectapheleia/apheleia-project-management/tree/main/examples/construction_single) | Multi-year construction project, one file per type |
 | [construction_multi](https://github.com/projectapheleia/apheleia-project-management/tree/main/examples/construction_multi) | The same construction project, split into shared definitions and a tasks file per resource |
 

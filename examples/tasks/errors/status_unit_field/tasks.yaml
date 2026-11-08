@@ -1,0 +1,12 @@
+type: "tasks_definitions"
+data:
+  - task: "Bad Task"
+    project: "Project Errors"
+    workpackage: "Errors"
+    resource: "Mickey Mouse"
+    estimate: "2 mw"
+    status:
+      - date: "2026-03-02"
+        spent: 0
+        remaining: 2
+        unit: "mw"

@@ -13,6 +13,8 @@ from pathlib import Path
 
 import yaml
 
+from ._utils import EFFORT_UNITS, UNIT_NAMES
+
 DEFAULTS = Path(__file__).parent / "defaults"
 """ Directory holding the default format, themes and logo """
 
@@ -25,7 +27,7 @@ BASE_THEME = "default"
 BASE_KEY = "__base__"
 """ Where the built-in base theme is kept while resolving, so a user theme called "default" still has it to fall back on """
 
-FORMAT_KEYS = {"title", "kicker", "generated", "theme_label", "default_theme", "builtin_themes", "logo", "css"}
+FORMAT_KEYS = {"title", "kicker", "generated", "theme_label", "default_theme", "builtin_themes", "logo", "css", "task_unit"}
 THEME_KEYS = {"name", "label", "extends", "dark", "variables", "chart", "bars", "css"}
 LOGO_KEYS = {"file", "svg", "alt", "link", "tooltip", "height"}
 RAMP_KEYS = {"hue", "saturation", "lightness"}
@@ -78,6 +80,8 @@ class Format:
     logo_tooltip : str
     logo_height : int
     css : str
+    task_unit : str = "md"
+    """ Unit of a task estimate, spent or remaining effort given as a number with no unit """
     themes : list[Theme] = field(default_factory=list)
     drawn_chart : dict[str, str] = field(default_factory=dict)
     """ Chart colours of the built-in default theme, which are the colours the charts are drawn in """
@@ -286,6 +290,10 @@ def configure(formats : list[dict], themes : list[dict]) -> Format:
             _fail(sources[key], f"{key} must be text")
     if not isinstance(merged["builtin_themes"], bool):
         _fail(sources["builtin_themes"], "builtin_themes must be true or false")
+    task_unit = merged["task_unit"]
+    if not isinstance(task_unit, str) or task_unit.strip().lower() not in EFFORT_UNITS:
+        _fail(sources["task_unit"], f"task_unit {task_unit!r} is not one of: "
+                                    + ", ".join(f"{u} ({n})" for u, n in UNIT_NAMES.items()))
 
     # Themes: the built-in base theme is always kept, since the others take their missing values from it
     raw = {BASE_KEY : next(t for t in default_themes if t["name"] == BASE_THEME)}
@@ -331,6 +339,7 @@ def configure(formats : list[dict], themes : list[dict]) -> Format:
         logo_tooltip=tooltip,
         logo_height=height,
         css=_css_block(sources["css"], "css", merged["css"]),
+        task_unit=task_unit.strip().lower(),
         themes=resolved,
         drawn_chart=_resolve_theme(BASE_KEY, raw, done).chart,
     )

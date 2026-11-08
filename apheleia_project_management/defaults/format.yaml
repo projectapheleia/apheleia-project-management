@@ -34,5 +34,9 @@ data:
     tooltip: "Apheleia logo\nClick to visit the project on GitHub (opens in a new tab)."
     height: 44
 
+  # Unit of task effort (estimate, spent and remaining) given as a plain number, e.g. "spent: 3".
+  # md (man-days), mw (man-weeks), mm (man-months) or my (man-years). Effort given with a unit, e.g. "3 mw", is not affected
+  task_unit: "md"
+
   # Extra CSS added to every page, after the themes. Empty by default
   css: ""

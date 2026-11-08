@@ -71,6 +71,30 @@ allocation.
 something that is not a number, a negative estimate and zero. ``make report`` in ``errors`` checks each fails in \
 the same way as the milestone error cases.
 
+Tasks
+-----
+
+``examples/tasks``
+
+``estimates`` shows good estimates (on track, finished early, finished exactly on the estimate) and bad ones: \
+remaining effort that takes a task past its estimate, effort already spent past it, a task finished over it, \
+work that grows at every status update, a task over its estimate before it has started, and a task with no \
+estimate. The over estimate tasks are listed on the project summary, the tasks page and the workpackage and \
+resource pages.
+
+``shared`` has tasks shared by two and three people, written as a list of names, beside tasks done by one \
+person. Each shared task is shown on the page of everyone working on it.
+
+``units`` gives task effort in man-days, man-weeks, man-months and man-years, mixing units within a task. \
+``default_unit`` sets ``task_unit`` to man-weeks, so plain numbers are man-weeks, alongside values with a unit \
+of their own.
+
+``errors`` has one directory for each way a task can be invalid: an estimate with an unknown unit, that is not a \
+number, zero or negative; status effort in an unknown unit or negative; a status update with no remaining, an \
+invalid date or the same date as another; a unit given as a field; no status updates; an empty list of resources, \
+a resource listed twice and a misspelt resource; and an unknown ``task_unit``. ``make report`` in ``errors`` \
+checks each fails in the same way as the milestone error cases.
+
 Resources
 ---------
 

@@ -1,0 +1,48 @@
+# Task effort as plain numbers in man-weeks, the task_unit set in format.yaml.
+type: "tasks_definitions"
+data:
+
+  # Plain numbers throughout: 4 mw estimated (20 md), 1.5 mw spent and 2.5 mw to do
+  - task: "Weeks"
+    project: "Project Units"
+    workpackage: "Units"
+    resource: "Mickey Mouse"
+    description: "Plain numbers, in man-weeks"
+    start: "2026-10-05"
+    estimate: 4
+    status:
+      - date: "2026-10-05"
+        spent: 0
+        remaining: 4
+      - date: "2026-11-02"
+        spent: 1.5
+        remaining: 2.5
+
+  # A unit given with the value is used instead of task_unit: 3 md, not 3 mw
+  - task: "Days"
+    project: "Project Units"
+    workpackage: "Units"
+    resource: "Daffy Duck"
+    description: "Plain numbers in man-weeks, and values with their own unit"
+    start: "2026-10-12"
+    estimate: "3 md"
+    status:
+      - date: "2026-10-12"
+        spent: 0
+        remaining: "3 md"
+      - date: "2026-10-19"
+        spent: 1           # 1 mw: 5 md, so over the 3 md estimate
+        remaining: "1 md"
+
+  # A plain estimate in man-weeks, status in man-months: 2 mw estimated is 0.5 mm
+  - task: "Months"
+    project: "Project Units"
+    workpackage: "Units"
+    resource: "Daffy Duck"
+    description: "Plain estimate in man-weeks, status in man-months"
+    start: "2026-11-02"
+    estimate: 2
+    status:
+      - date: "2026-11-02"
+        spent: "0 mm"
+        remaining: "0.5 mm"

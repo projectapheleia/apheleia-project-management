@@ -1,4 +1,3 @@
-import re
 from pathlib import Path
 
 import pandas as pd
@@ -8,13 +7,15 @@ from ._charts import SCALES, aggregate_by_period, color_map, gantt, stacked_bar
 from ._containers import Container, containers
 from ._tasks import (
     MISSING,
+    TASK_ESTIMATE_HELP,
+    add_over_estimate,
     create_task_progress_by_task,
     create_task_timeline,
     project_milestones,
     task_summary_stats,
     task_summary_table,
 )
-from ._utils import smart_date_converter, today
+from ._utils import format_months, parse_effort, smart_date_converter, today
 
 OUTSIDE = '<span class="badge badge-missing">OUTSIDE MILESTONE</span>'
 """ Shown against a workpackage whose dates do not fall within its milestone """
@@ -41,18 +42,6 @@ ESTIMATE_HELP = ("Estimate is the effort the workpackage was originally estimate
                  "to it (allocation x months, summed over its allocations). Workpackages whose allocated effort is more than "
                  "their estimate are marked OVER ESTIMATE. Workpackages with no estimate cannot be checked.")
 """ Hover guidance for the estimate columns """
-
-DAYS_PER_MONTH = 20
-""" Man-days in a man-month """
-
-MONTHS_PER_YEAR = 12
-""" Man-months in a man-year """
-
-DAYS_PER_WEEK = 5
-""" Man-days in a man-week """
-
-ESTIMATE_UNITS = {"md" : 1 / DAYS_PER_MONTH, "mw" : DAYS_PER_WEEK / DAYS_PER_MONTH, "mm" : 1.0, "my" : float(MONTHS_PER_YEAR)}
-""" Man-months in one of each estimate unit """
 
 class Workpackage(Container):
 
@@ -145,9 +134,10 @@ class Workpackage(Container):
                         )
 
             # Summary Table
-            tab.add_table("Tasks", task_summary_table(tasks_df),
-                          help="Progress of every task in this workpackage. Spent and remaining are in days; "
-                               "remaining of 0 means the task is complete.")
+            tab.add_table("Tasks", task_summary_table(tasks_df), units=True,
+                          help="Progress of every task in this workpackage. Remaining of 0 means the task is complete. "
+                               + TASK_ESTIMATE_HELP)
+            add_over_estimate(tab, tasks_df)
 
         super().export_html()
 
@@ -342,43 +332,7 @@ def parse_estimate(value, workpackage : str = "") -> (float | None):
     :rtype: float | None
     """
 
-    if value is None or (isinstance(value, float) and pd.isna(value)):
-        return None
-
-    units = ", ".join(ESTIMATE_UNITS)
-    where = f"workpackage {workpackage} estimate {value!r}"
-
-    if not isinstance(value, str):
-        raise ValueError(f"{where} must be a number followed by a unit ({units}), e.g. \"5 mm\"")
-    if value.strip() == "":
-        return None
-
-    m = re.fullmatch(r"\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+))\s*([A-Za-z-]*)\s*", value)
-    if m is None:
-        raise ValueError(f"{where} is not understood. It must be a number followed by a unit ({units}), e.g. \"5 mm\"")
-    number, unit = float(m.group(1)), m.group(2).lower()
-    if unit == "":
-        raise ValueError(f"{where} has no unit. Use md (man-days), mw (man-weeks), mm (man-months) or my (man-years), e.g. \"5 mm\"")
-    if unit not in ESTIMATE_UNITS:
-        raise ValueError(f"{where} has unknown unit {m.group(2)!r}. Use md (man-days), mw (man-weeks), mm (man-months) or my (man-years)")
-    if number <= 0:
-        raise ValueError(f"{where} must be greater than 0")
-
-    return number * ESTIMATE_UNITS[unit]
-
-def format_months(months : float) -> str:
-    """
-    Html for an effort in man-months
-
-    The page has a select box for the unit of effort, which rewrites the text of these spans.
-
-    :param months: Effort in man-months
-    :type months: float
-    :return: Html such as <span class="effort" data-mm="5.000000">5 mm</span>
-    :rtype: str
-    """
-    text = f"{months:.2f}".rstrip("0").rstrip(".")
-    return f'<span class="effort" data-mm="{months:.6f}">{text} mm</span>'
+    return parse_effort(value, f"workpackage {workpackage} estimate {value!r}")
 
 def check_estimates(summary_df : pd.DataFrame) -> pd.DataFrame:
     """

@@ -1,0 +1,23 @@
+type: "workpackages_definitions"
+data:
+  - workpackage: "Bring-up"
+    project: "Project Shared"
+    description: "Getting the first boards working"
+    estimate: "4 mm"
+    allocations:
+        - start: "2026-09"
+          end: "2026-12"
+          resource: "Mickey Mouse"
+          allocation: 0.5
+        - start: "2026-09"
+          end: "2026-12"
+          resource: "Daffy Duck"
+          allocation: 0.5
+        - start: "2026-10"
+          end: "2026-12"
+          resource: "Minnie Mouse"
+          allocation: 0.25
+        - start: "2026-10"
+          end: "2027-01"
+          resource: "Goofy"
+          allocation: 0.25

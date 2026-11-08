@@ -1,0 +1,6 @@
+type: "resources_definitions"
+data:
+  - resource: "Mickey Mouse"
+    start: "2026-09-01"
+  - resource: "Daffy Duck"
+    start: "2026-09-01"

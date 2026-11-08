@@ -6,9 +6,18 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
+from . import _format
 from ._charts import BAR_WIDTH, EFFORT_COLORS, SCALES, _shade_bars, aggregate_by_period, gantt, stacked_bar, style_axes
 from ._containers import Container, containers
-from ._utils import milestone_badges, milestone_dates_text, smart_date_converter, today
+from ._utils import (
+    DAYS_PER_MONTH,
+    format_days,
+    milestone_badges,
+    milestone_dates_text,
+    parse_effort,
+    smart_date_converter,
+    today,
+)
 
 
 class Task(Container):
@@ -37,11 +46,10 @@ class Task(Container):
         tab.add_chart("Task Timeline", create_task_timeline(self.imported_df))
 
         # Summary Table
-        tab.add_table("Latest Status", task_summary_table(self.imported_df),
+        tab.add_table("Latest Status", task_summary_table(self.imported_df), units=True,
                       help="The most recent status of this task. Start is the date given for the task, or the previous "
-                           "milestone if none was given. Estimate is the original effort estimate in days; MISSING means "
-                           "none was provided. Variance is spent plus remaining minus the estimate. Spent and remaining "
-                           "are in days; remaining of 0 means the task is complete.")
+                           "milestone if none was given. MISSING means no estimate was provided. Variance is spent plus "
+                           "remaining minus the estimate. Remaining of 0 means the task is complete. " + TASK_ESTIMATE_HELP)
 
         # Progress
         tab = self.html.add_tab("Progress")
@@ -95,13 +103,12 @@ class Tasks(Container):
 
         # No tasks defined
         if not definitions:
-            self.imported_df = pd.DataFrame(columns=columns)
+            self.imported_df = pd.DataFrame(columns=columns + ["resources"])
             return
 
-        # Every task needs a status history
-        for d in definitions:
-            if not d.get("status"):
-                raise ValueError(f"task {d.get('task')} has no status updates")
+        # Effort in days, resources as a tuple, and every status update checked
+        known = set(containers.get("resource", {}))
+        definitions = [parse_task(d, known) for d in definitions]
 
         all_top_level_keys = {key for d in definitions for key in d.keys()}
         meta_cols = [k for k in all_top_level_keys if k != "status"]
@@ -114,7 +121,6 @@ class Tasks(Container):
                                                 record_prefix="status.",
                                                 errors="ignore"
         )
-        self.imported_df["status.date"] = self.imported_df["status.date"].apply(smart_date_converter)
 
         # Columns with lists
         columns_with_lists = [
@@ -126,6 +132,10 @@ class Tasks(Container):
 
         # Check for unexpected fields
         self.validate_data(self.imported_df, pd.DataFrame(columns=columns))
+
+        # Every resource of each task, for the resource pages, and the names joined for display
+        self.imported_df["resources"] = self.imported_df["resource"]
+        self.imported_df["resource"] = self.imported_df["resources"].map(", ".join)
 
         # Create child tasks
         for p in definitions:
@@ -153,10 +163,11 @@ class Tasks(Container):
         # Summary Table
         info = self.imported_df.reindex(columns=["task", "project", "workpackage", "description"]).drop_duplicates("task")
         df = info.merge(task_summary_table(self.imported_df), on="task")
-        tab.add_table("Tasks", df,
+        tab.add_table("Tasks", df, units=True,
                       help="All tasks. Start is the date given for the task, or the previous milestone if none was given. "
-                           "Estimate is the original effort estimate in days; MISSING means none was provided. "
-                           "Click a task name to open its page.")
+                           "MISSING means no estimate was provided. Click a task name to open its page. " + TASK_ESTIMATE_HELP)
+
+        add_over_estimate(tab, self.imported_df)
 
         # Progress
         tab = self.html.add_tab("Progress")
@@ -169,6 +180,22 @@ class Tasks(Container):
                            "Blue is effort within the original estimate (the black line), red is effort past it, so a late task ends in red. Click a bar to open the task page.")
 
         super().export_html()
+
+def add_over_estimate(tab, df : pd.DataFrame) -> None:
+    """
+    Add the table of tasks that are over their estimate to a tab, or a line saying there are none
+
+    :param tab: Tab of a page
+    :param df: Dataframe of task status updates
+    :type df: pd.DataFrame
+    :return: None
+    """
+
+    over = tasks_over_estimate(df)
+    if over.empty:
+        tab.add_paragraph("Tasks Over Estimate", "No tasks are over their estimate.", help=TASK_ESTIMATE_HELP)
+    else:
+        tab.add_table("Tasks Over Estimate", over, units=True, help="Tasks whose spent plus remaining effort is more than their estimate, worst first (by % over). " + TASK_ESTIMATE_HELP)
 
 def create_task_timeline(df: pd.DataFrame, markers=None) -> px.timeline:
     """
@@ -184,7 +211,7 @@ def create_task_timeline(df: pd.DataFrame, markers=None) -> px.timeline:
 
     # 1. Get start and end date for task
     info = task_info(df)
-    df = info.merge(df.groupby("task", as_index=False).agg(description=("description", "first")), on="task")
+    df = info.merge(df.reindex(columns=["task", "description"]).groupby("task", as_index=False).first(), on="task")
     df = df.rename(columns={"last_status" : "last_status_date", "remaining" : "remaining_days"})
 
     # 2. If task isn't complete and today is > last status update the last status date
@@ -196,7 +223,7 @@ def create_task_timeline(df: pd.DataFrame, markers=None) -> px.timeline:
 
     # 3. Calculate end date based on last status and remaining work
     df["end"] = df.apply(
-                            lambda row: row["last_status_date"] + pd.offsets.BusinessDay(n=int(row["remaining_days"])),
+                            lambda row: row["last_status_date"] + pd.offsets.BusinessDay(n=int(np.ceil(row["remaining_days"]))),
                             axis=1
     )
 
@@ -293,6 +320,78 @@ def create_task_progress(df : pd.DataFrame, groupby : str, link_to : tuple=None)
                         )
 
     return figs
+
+def parse_task(definition : dict, known : set) -> dict:
+    """
+    Check a task definition and convert it to the form used by the report
+
+    Effort (the estimate, and spent and remaining in each status update) is converted to man-days. It is a number
+    and a unit, e.g. "3 mw", in md, mw, mm or my, or a plain number in the task_unit of the format (md by default).
+    The resource is a name or a list of names, which become a tuple.
+
+    :param definition: Task definition as given in the input
+    :type definition: dict
+    :param known: Names of the resources that are defined
+    :type known: set
+    :return: Copy of the definition with effort in days and the resources as a tuple
+    :rtype: dict
+    """
+
+    d = dict(definition)
+    name = d["task"]
+    unit = _format.active().task_unit
+
+    # Rounded so that the same effort in different units is equal, e.g. "0.1 my" and "24 md"
+    def days(value, where, allow_zero):
+        months = parse_effort(value, where, default_unit=unit, allow_zero=allow_zero)
+        return None if months is None else round(months * DAYS_PER_MONTH, 6)
+
+    # Resources: one name or a list of them, each defined in the resources
+    given = d.get("resource")
+    names = given if isinstance(given, list) else [given]
+    if given is None or not names:
+        raise ValueError(f"task {name} has no resource. Give a resource, or a list of resources for a task shared by several people")
+    for r in names:
+        if not isinstance(r, str) or r.strip() == "":
+            raise ValueError(f"task {name} resource {r!r} must be the name of a resource")
+    repeated = sorted({r for r in names if names.count(r) > 1})
+    if repeated:
+        raise ValueError(f"task {name} lists resource {', '.join(repeated)} more than once")
+    unknown = [r for r in names if r not in known]
+    if unknown:
+        raise ValueError(f"task {name} resource {', '.join(unknown)} is not defined in the resources")
+    d["resource"] = tuple(names)
+
+    # Original estimate
+    if "estimate" in d:
+        d["estimate"] = days(d["estimate"], f"task {name} estimate {d['estimate']!r}", allow_zero=False)
+
+    # Status updates
+    status = d.get("status")
+    if not isinstance(status, list) or not status:
+        raise ValueError(f"task {name} has no status updates")
+    updates = []
+    for i, u in enumerate(status, 1):
+        if not isinstance(u, dict):
+            raise ValueError(f"task {name} status update {i} must have a date, spent and remaining, got {u!r}")
+        u = dict(u)
+        for field in ("date", "spent", "remaining"):
+            if u.get(field) is None:
+                raise ValueError(f"task {name} status update {i} has no {field}")
+        date = pd.to_datetime(smart_date_converter(u["date"]), errors="coerce")
+        if pd.isna(date):
+            raise ValueError(f"task {name} status update {i} has an invalid date {u['date']!r}")
+        u["date"] = date
+        for field in ("spent", "remaining"):
+            u[field] = days(u[field], f"task {name} status update {i} ({date:%Y-%m-%d}) {field} {u[field]!r}", allow_zero=True)
+        updates.append(u)
+    dates = [u["date"] for u in updates]
+    if len(set(dates)) != len(dates):
+        repeated = sorted({f"{x:%Y-%m-%d}" for x in dates if dates.count(x) > 1})
+        raise ValueError(f"task {name} has more than one status update on {', '.join(repeated)}")
+    d["status"] = updates
+
+    return d
 
 def latest_task_status(df : pd.DataFrame) -> pd.DataFrame:
     """
@@ -409,7 +508,7 @@ def task_info(df : pd.DataFrame) -> pd.DataFrame:
     # Forecast completion: latest status (not before today, or the start date, if unfinished) plus remaining working days
     base = pd.Series(np.where(g["remaining"] != 0, g["last_status"].clip(lower=today), g["last_status"]), index=g.index)
     base = pd.Series(np.where(g["remaining"] != 0, np.maximum(base, g["start"]), base), index=g.index)
-    g["forecast_end"] = [b + pd.offsets.BusinessDay(n=int(r)) for b, r in zip(base, g["remaining"], strict=True)]
+    g["forecast_end"] = [b + pd.offsets.BusinessDay(n=int(np.ceil(r))) for b, r in zip(base, g["remaining"], strict=True)]
 
     total = g["spent"] + g["remaining"]
     g["total"] = total
@@ -422,8 +521,41 @@ def task_info(df : pd.DataFrame) -> pd.DataFrame:
     return g
 
 def over_badge(days : float) -> str:
-    """ Html badge marking a task that is past its estimate """
-    return f'<span class="badge badge-over">+{days:g}</span>'
+    """ Html badge marking a task that is past its estimate, by the given number of days """
+    return f'<span class="badge badge-over">+{format_days(days)}</span>'
+
+OVER_ESTIMATE = '<span class="badge badge-over">OVER ESTIMATE</span>'
+""" Shown against a task whose spent plus remaining effort is more than its estimate """
+
+WITHIN_ESTIMATE = '<span class="badge badge-upcoming">Within estimate</span>'
+""" Shown against a task whose spent plus remaining effort is no more than its estimate """
+
+TASK_ESTIMATE_HELP = ("Estimate is the original estimate of the effort for the task. A task is OVER ESTIMATE when the effort spent "
+                 "plus the effort remaining is more than its estimate, even if the extra effort has not been spent yet. "
+                 "Already spent past the estimate means the over-run has happened, not just been forecast. "
+                 "Tasks with no estimate cannot be checked. Effort is shown in the unit chosen in the Units box.")
+""" Hover guidance for the task estimate columns """
+
+def estimate_check(r) -> str:
+    """
+    Html saying whether a task is within its estimate, and if not by how much it is over
+
+    :param r: Row of task_info
+    :return: Html
+    :rtype: str
+    """
+
+    if not r.has_estimate:
+        return "No estimate"
+    if not r.over:
+        return f"{WITHIN_ESTIMATE} {format_days(r.total)} of {format_days(r.estimate)} ({r.total / r.estimate:.0%})"
+    over = f"{format_days(r.over_by)} over the estimate of {format_days(r.estimate)} (+{r.over_by / r.estimate:.0%})"
+    if r.spent <= r.estimate:
+        return f"{OVER_ESTIMATE} spent + remaining {format_days(r.total)} is {over}"
+    if r.remaining == 0:
+        return f"{OVER_ESTIMATE} finished in {format_days(r.spent)}, {over}"
+    return (f"{OVER_ESTIMATE} already spent {format_days(r.spent)}, past the estimate. With {format_days(r.remaining)} "
+            f"still to do it is {over}")
 
 def tasks_over_estimate(df : pd.DataFrame) -> pd.DataFrame:
     """
@@ -431,23 +563,25 @@ def tasks_over_estimate(df : pd.DataFrame) -> pd.DataFrame:
 
     :param df: Dataframe of task status updates
     :type df: pd.DataFrame
-    :return: One row per task that is over its estimate, worst first
+    :return: One row per task that is over its estimate, worst first (by the fraction over). Effort is html
     :rtype: pd.DataFrame
     """
 
     g = task_info(df)
-    g = g[g["over"]].sort_values("over_by", ascending=False)
+    g = g[g["over"]]
+    g = g.assign(_pct=g["over_by"] / g["estimate"]).sort_values(["_pct", "over_by"], ascending=False)
 
     return pd.DataFrame({
         "task" : g["task"],
         "workpackage" : g["workpackage"],
         "resource" : g["resource"],
         "status" : g["status"],
-        "estimate" : g["estimate"],
-        "spent" : g["spent"],
-        "remaining" : g["remaining"],
+        "estimate" : [format_days(v) for v in g["estimate"]],
+        "spent" : [format_days(v) for v in g["spent"]],
+        "remaining" : [format_days(v) for v in g["remaining"]],
         "over by" : [over_badge(v) for v in g["over_by"]],
-        "% over" : (100 * g["over_by"] / g["estimate"]).round(0).astype(int),
+        "% over" : (100 * g["_pct"]).round(0).astype(int),
+        "problem" : [estimate_check(r) for r in g.itertuples()],
     }).reset_index(drop=True)
 
 def task_summary_table(df : pd.DataFrame) -> pd.DataFrame:
@@ -456,7 +590,7 @@ def task_summary_table(df : pd.DataFrame) -> pd.DataFrame:
 
     :param df: Dataframe of task status updates
     :type df: pd.DataFrame
-    :return: One row per task. Missing estimates are flagged in the estimate column
+    :return: One row per task. Missing estimates are flagged in the estimate column. Effort is html, see format_days
     :rtype: pd.DataFrame
     """
 
@@ -469,10 +603,9 @@ def task_summary_table(df : pd.DataFrame) -> pd.DataFrame:
     def show_variance(r):
         if not r.has_estimate:
             return "&ndash;"
-        v = r.total - r.estimate
-        if v > 0:
-            return over_badge(v)
-        return f"{v:+g}" if v else "0"
+        if r.over:
+            return over_badge(r.over_by)
+        return format_days(r.over_by)
 
     out = pd.DataFrame({
         "task" : g["task"],
@@ -481,11 +614,12 @@ def task_summary_table(df : pd.DataFrame) -> pd.DataFrame:
         "start" : [show_start(r) for r in g.itertuples()],
         "last_status" : g["last_status"],
         "forecast_end" : g["forecast_end"],
-        "estimate" : [f"{e:g}" if pd.notna(e) else MISSING for e in g["estimate"]],
-        "spent" : g["spent"],
-        "remaining" : g["remaining"],
+        "estimate" : [format_days(e) if pd.notna(e) else MISSING for e in g["estimate"]],
+        "spent" : [format_days(v) for v in g["spent"]],
+        "remaining" : [format_days(v) for v in g["remaining"]],
         "variance" : [show_variance(r) for r in g.itertuples()],
         "% complete" : g["complete"].round(0).astype(int),
+        "estimate check" : [estimate_check(r) for r in g.itertuples()],
     })
 
     return out
@@ -560,10 +694,11 @@ def milestone_task_summary(tasks : pd.DataFrame, milestones : pd.DataFrame=None,
             "in progress" : int((sel["status"] == "In progress").sum()),
             "not started" : int((sel["status"] == "Not started").sum()),
             "no estimate" : int((~sel["has_estimate"]).sum()),
-            "over estimate" : (f'<span class="badge badge-over">{int(sel["over"].sum())} task(s), +{sel.loc[sel["over"], "over_by"].sum():g} days</span>'
-                              if sel["over"].any() else 0),
-            "spent" : spent,
-            "remaining" : remaining,
+            "over estimate" : (f'<span class="badge badge-over">{int(sel["over"].sum())} task(s), '
+                               f'+{format_days(sel.loc[sel["over"], "over_by"].sum())}</span>'
+                               if sel["over"].any() else 0),
+            "spent" : format_days(spent),
+            "remaining" : format_days(remaining),
             "% complete" : bar,
         })
 
@@ -598,6 +733,7 @@ def task_summary_stats(df : pd.DataFrame) -> list:
         ("Days remaining", days(remaining)),
         ("Forecast finish", t["forecast_end"].max().strftime("%Y-%m-%d")),
         ("Missing estimates", str(int((~t["has_estimate"]).sum())), int((~t["has_estimate"]).sum()) > 0),
+        ("Over estimate", str(int(t["over"].sum())), bool(t["over"].any())),
     ]
 
 def create_task_progress_by_task(df : pd.DataFrame, bar_height=50) -> go.Figure:
@@ -700,6 +836,10 @@ def create_task_progress_by_task(df : pd.DataFrame, bar_height=50) -> go.Figure:
 
 __all__ = [
     "tasks_over_estimate",
+    "add_over_estimate",
+    "parse_task",
+    "estimate_check",
+    "TASK_ESTIMATE_HELP",
     "milestone_task_summary",
     "task_summary_table",
     "task_summary_stats",

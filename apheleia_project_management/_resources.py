@@ -5,7 +5,14 @@ import plotly.graph_objects as go
 
 from ._charts import SCALES, color_map, gantt, stacked_bar
 from ._containers import Container, containers
-from ._tasks import create_task_progress_by_task, create_task_timeline, task_summary_stats, task_summary_table
+from ._tasks import (
+    TASK_ESTIMATE_HELP,
+    add_over_estimate,
+    create_task_progress_by_task,
+    create_task_timeline,
+    task_summary_stats,
+    task_summary_table,
+)
 from ._utils import default_end_date, smart_date_converter, today
 from ._workpackages import create_allocation_chart
 
@@ -457,11 +464,12 @@ class Resource(Container):
         """
 
         index = containers.get("tasks", {}).get("index")
-        if index is None or index.imported_df is None or "resource" not in index.imported_df.columns:
+        if index is None or index.imported_df is None or "resources" not in index.imported_df.columns:
             return
 
+        # Tasks shared by several people are shown, in full, on the page of each of them
         t = index.imported_df
-        t = t[t["resource"] == self.name]
+        t = t[t["resources"].map(lambda r: self.name in r)]
         if t.empty:
             return
 
@@ -476,9 +484,11 @@ class Resource(Container):
                            "Blue is effort within the original estimate (the black line), red is effort past it, so a late task ends in red. "
                            "Click a bar to open the task page.")
         tab.add_chart("Task Timeline", create_task_timeline(t, markers={"Today" : today}))
-        tab.add_table("Tasks", task_summary_table(t),
-                      help="Progress of every task this resource is associated with. Spent and remaining are in days; "
-                           "remaining of 0 means the task is complete.")
+        tab.add_table("Tasks", task_summary_table(t), units=True,
+                      help="Progress of every task this resource is associated with. A task shared with other people is "
+                           "shown in full: its effort is that of everyone working on it. Remaining of 0 means the task "
+                           "is complete. " + TASK_ESTIMATE_HELP)
+        add_over_estimate(tab, t)
 
 class Resources(Container):
 

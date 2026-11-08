@@ -1,0 +1,22 @@
+type: "workpackages_definitions"
+data:
+  - workpackage: "Firmware"
+    project: "Project Estimates"
+    description: "Firmware for the new board"
+    milestone: "M1"
+    estimate: "3 mm"
+    allocations:
+        - start: "2026-09"
+          end: "2026-12"
+          resource: "Mickey Mouse"
+          allocation: 0.75
+  - workpackage: "Test"
+    project: "Project Estimates"
+    description: "Testing of the firmware"
+    milestone: "M2"
+    estimate: "2 mm"
+    allocations:
+        - start: "2026-10"
+          end: "2027-03"
+          resource: "Daffy Duck"
+          allocation: 0.5

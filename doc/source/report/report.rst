@@ -49,7 +49,9 @@ with a single line describing it, and exits with a non-zero status so that it ca
     ERROR : tasks definitions contain unexpected fields: 'descripton' in ALU. Expected fields are: ...
 
 Errors are raised for files that are not valid YAML, definitions with no name, names defined more than \
-once, unexpected (usually misspelt) fields, and tasks or workpackages with no status updates or allocations.
+once, unexpected (usually misspelt) fields, and tasks or workpackages with no status updates or allocations. \
+Each input page lists the mistakes caught for its type, e.g. effort in an unknown unit or a task resource \
+that is not defined, under *Mistakes that are caught*.
 
 Files whose ``type`` is not recognised are skipped with a warning, as is an input directory with no input files:
 
@@ -110,8 +112,9 @@ Projects
 ^^^^^^^^
 
 - **Overview** - timeline of all projects, and a table of their definitions
-- **Project** - a summary of the status of its tasks grouped by the milestone they are needed for, and the \
-  tasks that are past their estimate; the project timeline with its milestones marked; the timeline and \
+- **Project** - a summary of the status of its tasks grouped by the milestone they are needed for, the \
+  tasks that are over their estimate and the workpackages outside their milestone or over their estimate; the \
+  project timeline with its milestones marked; the timeline and \
   resource allocation of its workpackages; and its definition
 
 .. image:: /images/project_timeline.png
@@ -122,7 +125,7 @@ Workpackages
 
 - **Overview** - timeline of all workpackages, the effort allocated to each over time, and a summary table
 - **Workpackage** - workpackage timeline, effort allocated by resource, and the progress, timeline and \
-  forecast completion of its tasks
+  forecast completion of its tasks, with those over their estimate
 
 .. image:: /images/workpackage_timeline.png
    :align: center
@@ -139,7 +142,7 @@ Resources
 - **Overview** - when every resource is available and at what percentage, the number of full time \
   equivalent resources available over time, each resource's availability today, and every availability period
 - **Resource** - their availability periods, effort allocated by project and by workpackage, the progress of \
-  their tasks, and their definition. See :doc:`../inputs/resources` for how to read the availability charts
+  their tasks (including tasks they share with others) with those over their estimate, and their definition. See :doc:`../inputs/resources` for how to read the availability charts
 
 .. image:: /images/resource_availability.png
    :align: center
@@ -153,8 +156,8 @@ Resources
 Tasks
 ^^^^^
 
-- **Overview** - timeline of all tasks, a summary table and overall progress
-- **Task** - task timeline, its latest status, and its progress over time
+- **Overview** - timeline of all tasks, a summary table, the tasks over their estimate and overall progress
+- **Task** - task timeline, its latest status and whether it is within its estimate, and its progress over time
 
 .. image:: /images/task_summary.png
    :align: center
@@ -170,8 +173,8 @@ Milestones
   whether it has passed, is current or is upcoming, and the milestone's definition. See \
   :doc:`../inputs/milestones` for how milestones are dated
 
-All timelines mark today's date. Allocations are shown in person-months, task effort in days. \
-See :doc:`workpackages <../inputs/workpackages>` and :doc:`tasks <../inputs/tasks>` for how these are calculated.
+All timelines mark today's date. On the charts allocations are shown in person-months and task effort in days. \
+Tables of effort have a *Units* select box to show it in man-years, man-months, man-weeks or man-days. See :doc:`workpackages <../inputs/workpackages>` and :doc:`tasks <../inputs/tasks>` for how these are calculated.
 
 Using in a Makefile
 -------------------

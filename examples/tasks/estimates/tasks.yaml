@@ -1,0 +1,175 @@
+# Good and bad task estimates.
+#
+# The estimate is the original estimate and is never changed. Each status update gives the effort spent
+# so far and the effort still to do, so spent + remaining is the current estimate. A task is OVER ESTIMATE
+# when spent + remaining is more than the estimate, whether or not the extra effort has been spent yet.
+#
+# Effort is a number and a unit (md, mw, mm or my) or a plain number in man-days (see examples/tasks/units).
+type: "tasks_definitions"
+data:
+
+  # ---- Good estimates
+
+  # On track: 3 mw (15 md) estimated, 6 md spent and 9 md to do, exactly the estimate
+  - task: "Boot Loader"
+    project: "Project Estimates"
+    workpackage: "Firmware"
+    resource: "Mickey Mouse"
+    description: "Good: on track"
+    start: "2026-10-05"
+    estimate: "3 mw"
+    status:
+      - date: "2026-10-05"
+        spent: 0
+        remaining: 15
+      - date: "2026-10-19"
+        spent: 3
+        remaining: 12
+      - date: "2026-11-02"
+        spent: 6
+        remaining: 9
+
+  # Finished early: 4 mw (20 md) estimated, done in 14 md (70% of the estimate)
+  - task: "Clock Setup"
+    project: "Project Estimates"
+    workpackage: "Firmware"
+    resource: "Mickey Mouse"
+    description: "Good: finished under the estimate"
+    start: "2026-09-07"
+    estimate: "4 mw"
+    status:
+      - date: "2026-09-07"
+        spent: 0
+        remaining: 20
+      - date: "2026-09-21"
+        spent: 8
+        remaining: 8
+      - date: "2026-09-28"
+        spent: 14
+        remaining: 0
+
+  # Spot on: 10 md estimated and done in exactly 10 md. Equal to the estimate is not over it
+  - task: "GPIO Driver"
+    project: "Project Estimates"
+    workpackage: "Firmware"
+    resource: "Mickey Mouse"
+    description: "Good: finished exactly on the estimate"
+    start: "2026-09-28"
+    estimate: "10 md"
+    status:
+      - date: "2026-09-28"
+        spent: 0
+        remaining: 10
+      - date: "2026-10-12"
+        spent: 10
+        remaining: 0
+
+  # ---- Bad estimates
+
+  # Forecast over: 2 mw (10 md) estimated, but 6 md spent and 8 md to do. Nothing past the estimate
+  # has been spent yet, but the task is already 4 md (40%) over
+  - task: "UART Driver"
+    project: "Project Estimates"
+    workpackage: "Firmware"
+    resource: "Mickey Mouse"
+    description: "Bad: remaining effort takes it past the estimate"
+    start: "2026-10-12"
+    estimate: "2 mw"
+    status:
+      - date: "2026-10-12"
+        spent: 0
+        remaining: 10
+      - date: "2026-11-02"
+        spent: 6
+        remaining: 8
+
+  # Overrun: 1 mw (5 md) estimated and 9 md already spent, with 3 md still to do. The over-run has
+  # happened, not just been forecast, and the report says so
+  - task: "Flash Driver"
+    project: "Project Estimates"
+    workpackage: "Firmware"
+    resource: "Mickey Mouse"
+    description: "Bad: already spent past the estimate, with more to do"
+    start: "2026-10-12"
+    estimate: "1 mw"
+    status:
+      - date: "2026-10-12"
+        spent: 0
+        remaining: 5
+      - date: "2026-10-19"
+        spent: 5
+        remaining: 4
+      - date: "2026-11-02"
+        spent: 9
+        remaining: 3
+
+  # Finished over: 0.5 mm (10 md) estimated, finished in 16 md (60% over)
+  - task: "Power Management"
+    project: "Project Estimates"
+    workpackage: "Firmware"
+    resource: "Mickey Mouse"
+    description: "Bad: finished, but over the estimate"
+    start: "2026-09-14"
+    estimate: "0.5 mm"
+    status:
+      - date: "2026-09-14"
+        spent: 0
+        remaining: 10
+      - date: "2026-10-05"
+        spent: 12
+        remaining: 2
+      - date: "2026-10-19"
+        spent: 16
+        remaining: 0
+
+  # Creeping: 1 mm (20 md) estimated. Each update finds more to do, so the current estimate grows from
+  # 20 to 26 md. The Task Progress chart on the task page shows the growth
+  - task: "Test Plan"
+    project: "Project Estimates"
+    workpackage: "Test"
+    resource: "Daffy Duck"
+    description: "Bad: the work grows at every status update"
+    start: "2026-10-05"
+    estimate: "1 mm"
+    status:
+      - date: "2026-10-05"
+        spent: 0
+        remaining: 20
+      - date: "2026-10-19"
+        spent: 5
+        remaining: 18
+      - date: "2026-11-02"
+        spent: 10
+        remaining: 15
+      - date: "2026-11-06"
+        spent: 14
+        remaining: 12
+
+  # Re-estimated before starting: 5 md estimated, but the first status already says 8 md. Not started
+  # tasks can be over their estimate too
+  - task: "Regression Suite"
+    project: "Project Estimates"
+    workpackage: "Test"
+    resource: "Daffy Duck"
+    description: "Bad: over the estimate before it has started"
+    start: "2027-01-04"
+    estimate: "5 md"
+    status:
+      - date: "2026-11-02"
+        spent: 0
+        remaining: 8
+
+  # No estimate: shown as MISSING, and cannot be checked
+  - task: "Test Rig"
+    project: "Project Estimates"
+    workpackage: "Test"
+    resource: "Daffy Duck"
+    description: "No estimate given"
+    start: "2026-10-12"
+    status:
+      - date: "2026-10-12"
+        spent: 0
+        remaining: 10
+      - date: "2026-11-02"
+        spent: 4
+        remaining: 10

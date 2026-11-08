@@ -20,8 +20,17 @@
  - Workpackages: every table of workpackages has a Units select box (`my`, `mm`, `mw`, `md`) that shows the effort, estimate and allocated columns, and the messages in them, in that unit. Columns sort and filter on the value in the chosen unit, e.g. `> 100` with `md` chosen. The choice applies to every table on the page and is remembered by the browser.
  - Hover guidance for the `milestone range`, `milestone check`, `estimate check`, `check` and `problem` columns.
  - examples/workpackages: `estimates`, with no estimate, a generous, a low and an exact estimate, and `errors` with one directory for each way an estimate can be invalid.
+ - Tasks: effort in the same units as workpackage estimates. The `estimate`, and `spent` and `remaining` in each status update, can be a number and a unit, e.g. `"3 mw"`, in `md`, `mw`, `mm` or `my`, and units can be mixed within a task. A plain number is in the new `task_unit` of the format, which is `md` by default, so existing task files are unchanged. `task_unit` applies to every task in the input.
+ - Tasks: `resource` can be a list of names, for a task shared by several people. The effort is that of the task as a whole. A shared task is shown in full on the page of each of its resources, and the resource column links to each of them. Every resource of a task must now be defined in the resources.
+ - Tasks: over estimate tasks are highlighted wherever tasks are shown. Every task table has an `estimate check` column marking a task `OVER ESTIMATE` with how far over it is, and whether the over-run is forecast, already spent or finished, and a Units select box. Tasks Over Estimate, worst first by percentage over, is shown on the tasks page and the Tasks tab of each workpackage and resource, as well as the project summary (where it was Tasks Past Estimate). The Task Progress Summary counts the tasks over estimate.
+ - Tasks: invalid tasks are reported as errors: effort with an unknown unit, that is not a number or is negative, an estimate of zero, a status update with no date, spent or remaining, a date that cannot be read or two updates on the same date, an empty list of resources, a resource listed twice or not defined, and an unknown `task_unit`.
+ - examples/tasks: `estimates` (good and bad estimates), `shared` (tasks shared by several people), `units` and `default_unit` (effort in every unit, and plain numbers in man-weeks), and `errors` with one directory for each way a task can be invalid.
 
 ### Fixed
+ - An estimate such as `"3 hours"` or `"2 m"` was read as a time before it was checked, giving a confusing error. Estimates are no longer read as dates.
+ - A task given a list of resources was counted once for each of them, multiplying its effort on the Task Progress chart.
+ - The report failed if no task had a `description`.
+ - Forecast finish dates truncated a fraction of a day of remaining effort. They now round it up.
  - The effort of a workpackage in the workpackage tables was the sum of its allocation fractions, ignoring the number of months. It is now allocation x months in person-months, as the allocation charts and resource pages already were.
  - Table column filters did not update the table until it was sorted. They now update as you type.
  - The workpackage tables showed the internal `outside` and `milestone date` columns used by the milestone check. They are no longer shown.
@@ -33,6 +42,7 @@
  - Resources Available Over Time now counts full time equivalents, so a resource at 50% counts as 0.5 and one on leave for half a month counts as 0.5 for that month. Periods with no end now run to the end of the last bar, so the last bar is no longer under counted.
  - The Resource Availability chart no longer has a key, since each row is already labelled with the resource.
  - The Project Timeline help describes both kinds of milestone, a due date only and a window.
+ - README: the examples table lists every example: `milestones`, `workpackages`, `tasks`, `resources` and `format` were missing.
  - Documentation: the resources and milestones input pages are rewritten in plain language, with worked examples, the rules, the report pages they affect and a table of the errors that are caught. The milestones page has a new timeline image showing both kinds of milestone, and the detail on milestone dates is now only on that page, with a short summary on the projects page.
 
 ## [v0.2.0] - 2026-11-07

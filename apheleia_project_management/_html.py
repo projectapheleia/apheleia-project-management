@@ -13,15 +13,15 @@ COLUMN_HELP = {
     "task": "Name of the task - the smallest unit of tracked work.",
     "project": "The project this item belongs to. Click the link to open the project page.",
     "workpackage": "The workpackage (a group of related tasks and resource allocations) this item belongs to.",
-    "resource": "The person (or team) doing the work.",
+    "resource": "The person (or team) doing the work. A task can be shared by several people.",
     "resources": "All resources allocated to this workpackage.",
     "milestone": "Milestone identifier. Milestones are shared checkpoints (e.g. M3) that projects give dates to.",
     "description": "Free-text description of the item.",
     "milestone range": "The date the workpackage must end by, which is the date of its milestone in the project. Starting earlier is fine.",
     "milestone check": "Whether the workpackage ends by its milestone, to the month. OUTSIDE MILESTONE says why it does not. Empty means no milestone was given.",
-    "estimate check": "Whether the effort allocated to the workpackage is within its estimate. OVER ESTIMATE says by how much it is over. No estimate means there is nothing to check.",
+    "estimate check": "Whether the effort is within the estimate. For a workpackage it is the effort allocated, for a task the effort spent plus remaining. OVER ESTIMATE says by how much it is over. No estimate means there is nothing to check.",
     "check": "Whether the workpackage passes this check, and if not why. See the guidance on the table.",
-    "problem": "What is wrong with the workpackage.",
+    "problem": "What is wrong with the workpackage or task.",
     "start": "Planned start date (YYYY-MM-DD). For workpackage allocations this is the first allocated month. For tasks, a note in brackets shows the date was not given and defaults to the previous milestone.",
     "end": "Planned end date (YYYY-MM-DD). Empty means open-ended - charts extend these bars to the default horizon.",
     "date": "Date the milestone is planned to be reached (YYYY-MM-DD).",
@@ -30,23 +30,23 @@ COLUMN_HELP = {
     "effort": "Total allocated effort, summed over all allocation periods. Shown in the unit chosen in the Units box (default man-months).",
     "allocated": "Total effort allocated to the workpackage (allocation x months, over all its allocations), in the unit chosen in the Units box.",
     "status.date": "Date of the status update (YYYY-MM-DD). The most recent update is the current position.",
-    "status.spent": "Effort already spent on the task, in days, as of the status date.",
-    "status.remaining": "Estimated effort still required to complete the task, in days. 0 means complete.",
+    "status.spent": "Effort already spent on the task, as of the status date.",
+    "status.remaining": "Estimated effort still required to complete the task. 0 means complete.",
     "current for": "Projects for which this is the current milestone, i.e. the next one due.",
     "next due": "Earliest date of this milestone among the projects it is current for.",
     "when": "Whether the milestone has passed, is the current milestone (the next one due), or is still upcoming.",
-    "over estimate": "Tasks (and days) that are past their estimate, i.e. spent plus remaining effort is more than the estimate.",
-    "over by": "Days by which spent plus remaining effort exceeds the estimate.",
+    "over estimate": "Tasks (and effort) that are past their estimate, i.e. spent plus remaining effort is more than the estimate.",
+    "over by": "Effort by which spent plus remaining exceeds the estimate, in the unit chosen in the Units box.",
     "% over": "Over-run as a percentage of the estimate.",
-    "estimate": "Original effort estimate. For a task it is in days and MISSING means none was provided. For a workpackage it is in the unit chosen in the Units box, and empty means none was given.",
-    "variance": "Spent plus remaining effort minus the estimate, in days. Positive means the task is expected to overrun.",
+    "estimate": "Original effort estimate, in the unit chosen in the Units box. For a task MISSING means none was provided; for a workpackage empty means none was given.",
+    "variance": "Spent plus remaining effort minus the estimate, in the unit chosen in the Units box. Positive means the task is expected to overrun.",
     "no estimate": "Number of these tasks that have no estimate.",
     "tasks": "Number of tasks needed by this milestone: those forecast to finish on or before its date (and after the previous milestone).",
     "complete": "Tasks with no work remaining.",
     "in progress": "Tasks with some work spent and some remaining.",
     "not started": "Tasks with no work spent yet.",
-    "spent": "Effort already spent on the task, in days, as of the latest status update.",
-    "remaining": "Estimated effort still required, in days. 0 means the task is complete.",
+    "spent": "Effort already spent on the task as of the latest status update, in the unit chosen in the Units box.",
+    "remaining": "Estimated effort still required, in the unit chosen in the Units box. 0 means the task is complete.",
     "% complete": "Spent effort as a percentage of spent plus remaining effort.",
     "status": "Complete (nothing remaining), In progress, or Not started (nothing spent yet).",
     "last_status": "Date of the latest status update for the task.",
@@ -1109,10 +1109,18 @@ gd.on('plotly_click', function(d) {
             # Container Lookup
             from ._containers import containers
             if col in containers.keys():
-                if val in containers[col].keys():
-                    full_path = containers[col][val].html.path
+                def link(name):
+                    full_path = containers[col][name].html.path
                     relative_path = full_path.relative_to(self.parent.path.parent, walk_up=True)
-                    return f'<a href="{relative_path}">{s}</a>'
+                    return f'<a href="{relative_path}">{name}</a>'
+
+                if val in containers[col].keys():
+                    return link(val)
+
+                # Several names, e.g. the resources of a shared task
+                names = val.split(", ")
+                if len(names) > 1 and all(n in containers[col] for n in names):
+                    return ", ".join(link(n) for n in names)
 
             return val
 

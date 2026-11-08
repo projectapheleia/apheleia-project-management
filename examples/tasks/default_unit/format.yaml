@@ -1,0 +1,5 @@
+# task_unit is the unit of task effort given as a plain number, for every task in the input.
+# Here plain numbers are man-weeks. Effort given with a unit, e.g. "3 md", is not affected.
+type: "format_definitions"
+data:
+  task_unit: "mw"

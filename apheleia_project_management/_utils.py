@@ -82,6 +82,99 @@ def milestone_dates_text(start, end) -> list:
             text.append(f"{s:%Y-%m-%d} to {e:%Y-%m-%d}")
     return text
 
+DAYS_PER_WEEK = 5
+""" Man-days in a man-week """
+
+DAYS_PER_MONTH = 20
+""" Man-days in a man-month """
+
+MONTHS_PER_YEAR = 12
+""" Man-months in a man-year """
+
+EFFORT_UNITS = {"md" : 1 / DAYS_PER_MONTH, "mw" : DAYS_PER_WEEK / DAYS_PER_MONTH, "mm" : 1.0, "my" : float(MONTHS_PER_YEAR)}
+""" Man-months in one of each unit of effort """
+
+UNIT_NAMES = {"md" : "man-days", "mw" : "man-weeks", "mm" : "man-months", "my" : "man-years"}
+""" Name of each unit of effort """
+
+_EFFORT = re.compile(r"\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+))\s*([A-Za-z-]*)\s*")
+
+def parse_effort(value, where : str, default_unit : (str | None) = None, allow_zero : bool = False) -> (float | None):
+    """
+    Convert an effort to man-months
+
+    An effort is a number followed by a unit: md (man-days), mw (man-weeks), mm (man-months) or my (man-years), e.g.
+    "5 mm". Whitespace between the number and unit is optional and the unit is not case sensitive.
+    A man-week is 5 man-days, a man-month 20 man-days and a man-year 12 man-months.
+
+    :param value: Effort as given in the input, or None / empty for none
+    :param where: What the value is, for error messages, e.g. "workpackage WP1 estimate '5'"
+    :type where: str
+    :param default_unit: Unit of a number given without one. If None a unit must be given
+    :type default_unit: str | None
+    :param allow_zero: Whether 0 is allowed. Negative values never are
+    :type allow_zero: bool
+    :return: Effort in man-months, or None if there is none
+    :rtype: float | None
+    """
+
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return None
+
+    units = ", ".join(EFFORT_UNITS)
+    names = ", ".join(f"{u} ({n})" for u, n in UNIT_NAMES.items())
+    example = '"5 mm"'
+
+    is_number = isinstance(value, (int, float)) and not isinstance(value, bool)
+    if not (is_number or isinstance(value, str)) or (is_number and default_unit is None):
+        raise ValueError(f"{where} must be a number followed by a unit ({units}), e.g. {example}")
+
+    if is_number:
+        number, unit = float(value), default_unit
+    else:
+        if value.strip() == "":
+            return None
+        m = _EFFORT.fullmatch(value)
+        if m is None:
+            raise ValueError(f"{where} is not understood. It must be a number followed by a unit ({units}), e.g. {example}")
+        number, unit = float(m.group(1)), m.group(2).lower() or default_unit
+        if unit is None:
+            raise ValueError(f"{where} has no unit. Use {names}, e.g. {example}")
+        if unit not in EFFORT_UNITS:
+            raise ValueError(f"{where} has unknown unit {m.group(2)!r}. Use {names}")
+
+    if number < 0 or (number == 0 and not allow_zero):
+        raise ValueError(f"{where} must not be negative" if allow_zero else f"{where} must be greater than 0")
+
+    return number * EFFORT_UNITS[unit]
+
+def format_months(months : float) -> str:
+    """
+    Html for an effort in man-months
+
+    The page has a select box for the unit of effort, which rewrites the text of these spans.
+
+    :param months: Effort in man-months
+    :type months: float
+    :return: Html such as <span class="effort" data-mm="5.000000">5 mm</span>
+    :rtype: str
+    """
+    text = f"{months:.2f}".rstrip("0").rstrip(".")
+    if text in ("", "-0"):
+        text = "0"
+    return f'<span class="effort" data-mm="{months:.6f}">{text} mm</span>'
+
+def format_days(days : float) -> str:
+    """
+    Html for an effort in man-days, which the page shows in the unit chosen in its Units box
+
+    :param days: Effort in man-days
+    :type days: float
+    :return: Html, see format_months
+    :rtype: str
+    """
+    return format_months(days / DAYS_PER_MONTH)
+
 def value_to_filename(value : str) -> str:
     """
     Convert a string to a valid filename
@@ -101,5 +194,13 @@ __all__ = [
     "smart_date_converter",
     "milestone_badges",
     "milestone_dates_text",
-    "value_to_filename"
+    "value_to_filename",
+    "parse_effort",
+    "format_months",
+    "format_days",
+    "EFFORT_UNITS",
+    "UNIT_NAMES",
+    "DAYS_PER_WEEK",
+    "DAYS_PER_MONTH",
+    "MONTHS_PER_YEAR",
 ]

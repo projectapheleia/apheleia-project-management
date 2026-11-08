@@ -17,6 +17,9 @@ from ._workpackages import WorkPackages
 # Add version
 __version__: str = "0.2.0"
 
+NOT_DATES = {"estimate"}
+""" Fields of a definition that are never converted to dates """
+
 def import_from_yaml(path : Path) -> None:
     """
     Import data from all found yaml files
@@ -77,8 +80,9 @@ def import_from_yaml(path : Path) -> None:
             look[k] += [{**d, _format.SOURCE : file_path} for d in definitions]
             continue
 
+        # Estimates are effort, not dates, so they are kept as given: "3 hours" would otherwise be read as a time
         for d in definitions:
-            data[k].append({_k : smart_date_converter(_v) for _k, _v in d.items()})
+            data[k].append({_k : _v if _k in NOT_DATES else smart_date_converter(_v) for _k, _v in d.items()})
 
     if found == 0:
         print(f"WARNING : no input files found in {path}", file=sys.stderr)

@@ -7,7 +7,7 @@ import pandas as pd
 
 from ._charts import gantt
 from ._containers import Container, containers
-from ._tasks import milestone_task_summary, tasks_over_estimate
+from ._tasks import TASK_ESTIMATE_HELP, add_over_estimate, milestone_task_summary
 from ._utils import milestone_badges, milestone_dates_text, smart_date_converter, today
 from ._workpackages import (
     ESTIMATE_HELP,
@@ -166,22 +166,14 @@ class Project(Container):
             tasks_page = containers["tasks"]["index"].html.path
             href = os.path.relpath(tasks_page, self.html.path.parent).replace(os.sep, "/") + "#project=" + urllib.parse.quote(self.name)
 
-            tab.add_table("Task Status by Milestone", milestone_task_summary(project_tasks, milestones_df, tasks_href=href),
+            tab.add_table("Task Status by Milestone", milestone_task_summary(project_tasks, milestones_df, tasks_href=href), units=True,
                           help="Status of all of this project's tasks, grouped by the milestone they are needed for. A task "
                                "belongs to the first milestone dated on or after its forecast finish. The highlighted row is "
                                "the current milestone: the next one due. Click a task count to open the tasks page filtered "
-                               "to this project. Spent and remaining are in days. Over estimate flags milestones with tasks "
-                               "whose spent plus remaining effort is more than their estimate.")
+                               "to this project. Over estimate flags milestones with tasks whose spent plus remaining effort is "
+                               "more than their estimate. " + TASK_ESTIMATE_HELP)
 
-            over = tasks_over_estimate(project_tasks)
-            if over.empty:
-                tab.add_paragraph("Tasks Past Estimate", "No tasks are past their estimate.",
-                                  help="Tasks whose spent plus remaining effort is more than their estimate.")
-            else:
-                tab.add_table("Tasks Past Estimate", over,
-                              help="Tasks whose spent plus remaining effort is now more than their estimate, worst first. "
-                                   "Over by is the number of days past the estimate. Tasks with no estimate cannot be "
-                                   "checked and are not listed.")
+            add_over_estimate(tab, project_tasks)
         else:
             tab.add_paragraph("Task Status by Milestone", "No tasks have been recorded for this project.")
 

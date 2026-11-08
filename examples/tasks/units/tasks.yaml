@@ -1,0 +1,80 @@
+# Task effort in different units.
+#
+# The estimate, and spent and remaining in each status update, are a number and a unit, with or without
+# a space between them, in any case, as for a workpackage estimate:
+#   md   man-days
+#   mw   man-weeks   (1 mw = 5 md)
+#   mm   man-months  (1 mm = 20 md)
+#   my   man-years   (1 my = 12 mm = 240 md)
+# A plain number is in the default unit, task_unit, which is md unless a format_definitions file changes
+# it (see examples/tasks/default_unit). The report shows effort in the unit chosen in the Units box.
+type: "tasks_definitions"
+data:
+
+  # Man-days throughout, written as plain numbers: the default unit
+  - task: "Days"
+    project: "Project Units"
+    workpackage: "Units"
+    resource: "Mickey Mouse"
+    description: "Plain numbers, in the default unit (md)"
+    start: "2026-09-07"
+    estimate: 15
+    status:
+      - date: "2026-09-07"
+        spent: 0
+        remaining: 15
+      - date: "2026-09-28"
+        spent: 15
+        remaining: 0
+
+  # Man-weeks: 3 mw estimated (15 md). Status mixes units: 1 mw spent is 5 md. At the last update
+  # 1.6 mw (8 md) is spent and 7 md remains, which is exactly the estimate
+  - task: "Weeks"
+    project: "Project Units"
+    workpackage: "Units"
+    resource: "Mickey Mouse"
+    description: "Estimate in man-weeks, status in man-weeks and man-days"
+    start: "2026-10-05"
+    estimate: "3 mw"
+    status:
+      - date: "2026-10-05"
+        spent: "0 mw"
+        remaining: "3mw"
+      - date: "2026-10-19"
+        spent: "1 MW"
+        remaining: "10 md"
+      - date: "2026-11-02"
+        spent: "1.6 mw"
+        remaining: "7 md"
+
+  # Man-months: 1.5 mm estimated (30 md), 0.5 mm spent and 1 mm to do
+  - task: "Months"
+    project: "Project Units"
+    workpackage: "Units"
+    resource: "Daffy Duck"
+    description: "Estimate and status in man-months"
+    start: "2026-10-01"
+    estimate: "1.5 mm"
+    status:
+      - date: "2026-10-01"
+        spent: "0 mm"
+        remaining: "1.5 mm"
+      - date: "2026-11-02"
+        spent: "0.5 mm"
+        remaining: "1 mm"
+
+  # Man-years: 0.25 my estimated (3 mm, 60 md). Now forecast at 3.5 mm, so over the estimate
+  - task: "Years"
+    project: "Project Units"
+    workpackage: "Units"
+    resource: ["Mickey Mouse", "Daffy Duck"]
+    description: "Estimate in man-years, status in man-months: over the estimate"
+    start: "2026-09-01"
+    estimate: "0.25 my"
+    status:
+      - date: "2026-09-01"
+        spent: 0
+        remaining: "3 mm"
+      - date: "2026-11-02"
+        spent: "1.5 mm"
+        remaining: "2 mm"

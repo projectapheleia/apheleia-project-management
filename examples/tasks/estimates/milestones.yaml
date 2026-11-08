@@ -1,0 +1,6 @@
+type: "milestones_definitions"
+data:
+  - milestone: "M1"
+    description: "Firmware complete"
+  - milestone: "M2"
+    description: "Testing complete"

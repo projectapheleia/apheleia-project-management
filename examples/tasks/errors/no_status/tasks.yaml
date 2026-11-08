@@ -1,0 +1,8 @@
+type: "tasks_definitions"
+data:
+  - task: "Bad Task"
+    project: "Project Errors"
+    workpackage: "Errors"
+    resource: "Mickey Mouse"
+    estimate: "2 mw"
+    status: []
