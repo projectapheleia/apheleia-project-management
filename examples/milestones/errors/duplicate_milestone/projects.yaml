@@ -1,0 +1,12 @@
+# Error case: The same milestone given twice in a project
+# The report must fail with an error containing: is given more than once
+type: "projects_definitions"
+data:
+  - project: "Project Errors"
+    start: "2026-01-01"
+    end: "2027-01-01"
+    milestones:
+      - milestone: "M1"
+        date: "2026-02-01"
+      - milestone: "M1"
+        date: "2026-04-01"

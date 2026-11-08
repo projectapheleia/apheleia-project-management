@@ -1,0 +1,10 @@
+# Error case: A milestone with a start but no end
+# The report must fail with an error containing: must have either a date, or both a start and an end date
+type: "projects_definitions"
+data:
+  - project: "Project Errors"
+    start: "2026-01-01"
+    end: "2027-01-01"
+    milestones:
+      - milestone: "M1"
+        start: "2026-02-01"

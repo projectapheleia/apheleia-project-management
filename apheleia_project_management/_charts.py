@@ -188,7 +188,8 @@ def gantt(  df : pd.DataFrame,
             link_key: str=None,
             colors: dict=None,
             show_legend: bool=False,
-            milestones: tuple[str, str]=None) -> px.timeline:
+            milestones: tuple[str, str]=None,
+            windows: dict[str, tuple[pd.Timestamp, pd.Timestamp]]=None) -> px.timeline:
     """
     Generate Gantt chart from dataframe
 
@@ -218,6 +219,9 @@ def gantt(  df : pd.DataFrame,
     :param milestones: Optional tuple of the columns holding the milestone name and milestone date of each
                        row. A diamond is drawn on the row at the date of the milestone
     :type milestones: tuple[str, str]
+    :param windows: Optional dictionary of name to (start, end) for milestones that span a period. Each is drawn
+                    as two dotted vertical lines joined by a horizontal line, and may overlap others
+    :type windows: dict[str, tuple[pd.Timestamp, pd.Timestamp]]
     :return: Gantt chart
     :rtype: px.timeline
     """
@@ -264,30 +268,55 @@ def gantt(  df : pd.DataFrame,
         fig.update_layout(meta={"link_key": link_key})
 
     rows = 1
-    if markers is not None:
+    markers = markers or {}
+    windows = {k : v for k, v in (windows or {}).items() if pd.notna(v[0]) and pd.notna(v[1])}
+    if markers or windows:
         # Put labels that would overlap the previous one on a higher row
-        x_min = min([df_new[x_start[0]].min()] + [v for v in markers.values() if pd.notna(v)])
-        x_max = max([df_new[x_end[0]].max()] + [v for v in markers.values() if pd.notna(v)])
+        points = [v for v in markers.values() if pd.notna(v)] + [d for w in windows.values() for d in w]
+        x_min = min([df_new[x_start[0]].min()] + points)
+        x_max = max([df_new[x_end[0]].max()] + points)
         span = max((x_max - x_min).total_seconds(), 1)
+        plot_height = len(df) * bar_height
         row_ends = []
-        for k, v in sorted(((k, v) for k, v in markers.items() if pd.notna(v)), key=lambda kv: kv[1]):
-            start = (v - x_min).total_seconds() / span
-            end = start + (len(str(k)) * MARKER_CHAR_WIDTH + MARKER_PADDING) / MARKER_PLOT_WIDTH
+
+        def place(first, last, name):
+            start = (first - x_min).total_seconds() / span
+            end = max((last - x_min).total_seconds() / span,
+                      start + (len(str(name)) * MARKER_CHAR_WIDTH + MARKER_PADDING) / MARKER_PLOT_WIDTH)
             row = next((i for i, e in enumerate(row_ends) if start >= e), len(row_ends))
             if row == len(row_ends):
                 row_ends.append(end)
             else:
                 row_ends[row] = end
-            fig.add_vline(
-                x=v.timestamp()*1000,
-                line_width=2,
-                line_dash="dash",
-                line_color="#d62839",
-                annotation_text=k,
-                annotation_position="top right",
-                annotation_yshift=20 + row * MARKER_ROW_HEIGHT,
-                annotation_font=dict(color="#d62839", size=12)
-            )
+            return row
+
+        items = [(v, v, k, False) for k, v in markers.items() if pd.notna(v)]
+        items += [(w[0], w[1], k, True) for k, w in windows.items()]
+        for first, last, k, is_window in sorted(items, key=lambda i: (i[0], i[1])):
+            row = place(first, last, k)
+            if not is_window:
+                fig.add_vline(
+                    x=first.timestamp()*1000,
+                    line_width=2,
+                    line_dash="dash",
+                    line_color="#d62839",
+                    annotation_text=k,
+                    annotation_position="top right",
+                    annotation_yshift=20 + row * MARKER_ROW_HEIGHT,
+                    annotation_font=dict(color="#d62839", size=12)
+                )
+                continue
+
+            # Window: dotted line at each end, joined by a horizontal line above the plot
+            top = 1 + (20 + row * MARKER_ROW_HEIGHT) / max(plot_height, 1)
+            line = dict(color="#d62839", width=2, dash="dot")
+            for x in (first, last):
+                fig.add_shape(type="line", xref="x", yref="paper", x0=x, x1=x, y0=0, y1=top, line=line)
+            fig.add_shape(type="line", xref="x", yref="paper", x0=first, x1=last, y0=top, y1=top,
+                          line=dict(color="#d62839", width=2))
+            fig.add_annotation(xref="x", yref="paper", x=first, y=top, text=k, showarrow=False,
+                               xanchor="left", yanchor="bottom", xshift=4,
+                               font=dict(color="#d62839", size=12))
         rows = max(len(row_ends), 1)
 
     style_axes(fig)

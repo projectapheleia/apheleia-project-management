@@ -1,0 +1,16 @@
+type: "milestones_definitions"
+data:
+  - milestone: "M0"
+    description: "Kick-off"
+
+  - milestone: "M1"
+    description: "Design Review"
+
+  - milestone: "M2"
+    description: "Beta Testing"
+
+  - milestone: "M3"
+    description: "Customer Trials"
+
+  - milestone: "M4"
+    description: "Release"

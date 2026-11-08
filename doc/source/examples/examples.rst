@@ -41,6 +41,22 @@ three workpackages and three tasks, with one file for each type.
 This is the best starting point for a new plan. The files are shown in full on each of the \
 :doc:`input file <../inputs/inputs>` pages.
 
+Milestones
+----------
+
+``examples/milestones``
+
+Examples of project milestones, with the bare minimum around them: no resources, workpackages or tasks.
+
+``windows`` shows single date milestones, drawn as a vertical line, overlapping milestones with a start and \
+end date, drawn as a window, and dates relative to other milestones.
+
+``errors`` has one directory for each way a milestone can be invalid: a date mixed with a start or end, only a \
+start or an end, an end before the start, unexpected fields, duplicate milestones, dates that cannot be read, \
+and relative dates that refer to an unknown milestone or to themselves. ``make report`` in ``errors`` runs the \
+report on each and passes only if the report fails with a non-zero exit status and the expected ``ERROR :`` \
+message, and does not generate a report.
+
 Construction Single
 -------------------
 

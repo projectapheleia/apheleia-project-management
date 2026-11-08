@@ -1,0 +1,27 @@
+type: "projects_definitions"
+data:
+  - project: "Project Windows"
+    start: "2026-01-01"
+    end: "2027-01-01"
+    description: "Example of milestones on a single date and milestones with a start and end date"
+    milestones:
+        # Single date milestones: drawn as one vertical line
+        - milestone: "M0"
+          date: "2026-01-15"
+        - milestone: "M4"
+          date: "2026-12-15"
+
+        # Start and end date milestones: drawn as a window, and may overlap
+        - milestone: "M1"
+          start: "2026-03-01"
+          end: "2026-04-30"
+
+        # Dates can be relative to another milestone of the project, in any order:
+        #   <milestone>.<date|start|end> [+|- <n> days|weeks|months|years]
+        # or the same milestone's own fields, e.g. "start + 7 weeks"
+        - milestone: "M2"
+          start: "M1.start + 1 month"
+          end: "start + 17 weeks"
+        - milestone: "M3"
+          start: "M2.end - 6 weeks"
+          end: "M3.start + 4 months"

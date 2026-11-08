@@ -15,7 +15,9 @@ help:
 	@echo "  make help    - show this help"
 
 report:
-	$(REPORT) --input . --html $(HTML)
+	@$(REPORT) --input . --html $(HTML); status=$$?; \
+	if [ $$status -ne 0 ]; then echo "FAIL: $(REPORT) exited with status $$status, expected 0"; exit 1; fi; \
+	echo "OK: report generated in $(HTML) (exit status 0)"
 
 clean:
 	rm -rf $(HTML)

@@ -1,4 +1,5 @@
 import os
+import re
 import urllib.parse
 from pathlib import Path
 
@@ -7,8 +8,90 @@ import pandas as pd
 from ._charts import gantt
 from ._containers import Container, containers
 from ._tasks import milestone_task_summary, tasks_over_estimate
-from ._utils import milestone_badges, smart_date_converter, today
+from ._utils import milestone_badges, milestone_dates_text, smart_date_converter, today
 from ._workpackages import MILESTONE_HELP, check_milestones, create_allocation_chart, workpackages_outside_milestone
+
+DATE_FIELDS = ("date", "start", "end")
+""" Fields of a project milestone that hold dates """
+
+RELATIVE_DATE = re.compile(r"\s*(?:(?P<ms>.+?)\.)?(?P<field>date|start|end)"
+                           r"(?:\s*(?P<sign>[+-])\s*(?P<n>\d+)\s*(?P<unit>day|week|month|year)s?)?\s*")
+""" A date relative to a milestone of the project, e.g. M1.start + 6 months """
+
+def resolve_milestone_dates(project : dict) -> None:
+    """
+    Check the milestones of a project definition and replace relative dates with YYYY-MM-DD, in place.
+
+    A milestone has a date, or a start and an end. Any of these can be relative to a milestone of the
+    same project, e.g. "M1.start + 6 months", or to the milestone's own fields, e.g. "start + 7 weeks".
+    When referenced, date and end are both the date a milestone is due, and the start of a single date
+    milestone is its date.
+
+    :param project: Project definition
+    :type project: dict
+    :return: None
+    """
+
+    milestones = [m for m in project.get("milestones") or [] if isinstance(m, dict)]
+    names = set()
+    raw = {}
+    for m in milestones:
+        name = m.get("milestone")
+        where = f"milestone {name} of project {project['project']}"
+        if name in names:
+            raise ValueError(f"{where} is given more than once")
+        names.add(name)
+        unexpected = sorted(set(m) - {"milestone", *DATE_FIELDS})
+        if unexpected:
+            raise ValueError(f"{where} has unexpected fields: {', '.join(unexpected)}. "
+                             f"Expected fields are: milestone, date or start and end")
+        for k in DATE_FIELDS:
+            v = smart_date_converter(m.get(k))
+            if isinstance(v, str):
+                raw[(name, k)] = RELATIVE_DATE.fullmatch(v)
+                if raw[(name, k)] is None:
+                    raise ValueError(f"{where} has {k} {v!r}, which is not a date or a relative date such as 'M1.start + 6 months'")
+            elif v is not None and pd.notna(v):
+                raw[(name, k)] = pd.Timestamp(v)
+        given = {k for k in DATE_FIELDS if (name, k) in raw}
+        if given and given != {"date"} and given != {"start", "end"}:
+            raise ValueError(f"{where} must have either a date, or both a start and an end date")
+
+    resolved = {}
+
+    def resolve(key, chain=()):
+        # Date of a (milestone, field), following relative dates. Chain is the keys being resolved, to catch loops
+        if key in resolved:
+            return resolved[key]
+        value = raw[key]
+        if isinstance(value, re.Match):
+            where = f"milestone {key[0]} of project {project['project']}"
+            if key in chain:
+                raise ValueError(f"{where} has a {key[1]} that depends on itself")
+            ref = value["ms"] or key[0]
+            if ref not in names:
+                raise ValueError(f"{where} refers to {ref}, which is not a milestone of the project")
+            field = "start" if value["field"] == "start" else "end"
+            ref_key = next((k for k in ((ref, field), (ref, "date")) if k in raw), None)
+            if ref_key is None:
+                raise ValueError(f"{where} refers to {ref}.{value['field']}, which has no date")
+            date = resolve(ref_key, (*chain, key))
+            if value["unit"]:
+                n = int(value["n"]) * (-1 if value["sign"] == "-" else 1)
+                date += pd.DateOffset(**{f"{value['unit']}s" : n})
+            value = date
+        resolved[key] = value
+        return value
+
+    for (name, k) in raw:
+        resolve((name, k))
+    for m in milestones:
+        name = m.get("milestone")
+        for k in DATE_FIELDS:
+            if (name, k) in resolved:
+                m[k] = f"{resolved[(name, k)]:%Y-%m-%d}"
+        if (name, "start") in resolved and resolved[(name, "end")] < resolved[(name, "start")]:
+            raise ValueError(f"milestone {name} of project {project['project']} ends ({m['end']}) before it starts ({m['start']})")
 
 
 class Project(Container):
@@ -42,14 +125,21 @@ class Project(Container):
         # Get milestones
         milestones_df = None
         markers = {"Today" : today}
+        windows = {}
         if "milestones" in self.imported_df.columns:
             given = pd.json_normalize([m for m in self.imported_df["milestones"] if isinstance(m, dict)])
             index = containers.get("milestones", {}).get("index")
             defined = index.imported_df if index is not None and index.imported_df is not None else pd.DataFrame(columns=["milestone"])
             if not given.empty and "milestone" in given.columns:
                 milestones_df = pd.merge(given, defined, on='milestone', how='inner')
-                milestones_df["date"] = milestones_df["date"].apply(smart_date_converter)
-                markers = markers | milestones_df.set_index('milestone')['date'].to_dict()
+                for col in ("date", "start", "end"):
+                    milestones_df[col] = pd.to_datetime(milestones_df[col], errors="coerce") if col in milestones_df else pd.NaT
+
+                # A single date is a marker; a start and end is a window, due on its end date
+                milestones_df["date"] = milestones_df.pop("end").fillna(milestones_df["date"])
+                is_window = milestones_df["start"].notna()
+                windows = {r.milestone : (r.start, r.date) for r in milestones_df[is_window].itertuples()}
+                markers |= milestones_df[~is_window].set_index("milestone")["date"].to_dict()
                 if milestones_df.empty:
                     milestones_df = None
 
@@ -108,6 +198,7 @@ class Project(Container):
                                                 ("end", "End Date"),
                                                 ("project", "Project Name"),
                                                 markers=markers,
+                                                windows=windows,
                                                 description="description",
                                                 link_key="project",
                                             )
@@ -116,8 +207,10 @@ class Project(Container):
         if milestones_df is not None:
             milestones_df = milestones_df.sort_values("date").reset_index(drop=True)
             milestones_df["when"] = milestone_badges(milestones_df["date"])
-            tab.add_table("Milestones", milestones_df,
-                          help="This project's milestones and their dates. The current milestone is the next one due.")
+            shown = milestones_df.assign(date=milestone_dates_text(milestones_df["start"], milestones_df["date"])).drop(columns=["start"])
+            tab.add_table("Milestones", shown,
+                          help="This project's milestones and their dates. A milestone with a start and end date is shown as "
+                               "start to end, and is due on its end date. The current milestone is the next one due.")
 
         # Find all workpackages relating to this projects
         workpackages = []
@@ -174,6 +267,8 @@ class Projects(Container):
         """
 
         self.check_definitions(definitions, "project")
+        for p in definitions:
+            resolve_milestone_dates(p)
         super().import_data(definitions)
         self.validate_data(self.imported_df, pd.DataFrame(columns=["project", "start", "end", "description", "milestones"]))
 

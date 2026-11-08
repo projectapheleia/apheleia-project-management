@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+ - examples/milestones: `windows`, and `errors` with one directory for each way a milestone can be invalid. An error case passes only if the report exits with a non-zero status and the expected `ERROR :` message; every other example fails unless the report exits with status 0.
+ - examples/Makefile: `make report` prints `<example> : PASSED` or `FAILED` as each example finishes, then the number passed and failed, and supports `-j`. `make clean` prints a one line summary.
+ - Milestones: a project can give a milestone a `start` and an `end` date instead of a single `date`. These milestones can overlap, and are drawn on the project timeline as a window: a dotted vertical line at each end joined by a horizontal line. Single date milestones are unchanged. In project tables the dates are combined, e.g. `2026-03-01 to 2026-04-30`; the table of projects using a milestone has separate start and end columns, with the start blank for a single date. A window milestone is due on its end date. A milestone with only one of `start` and `end`, a mixture of `date` and `start`/`end`, or an end before its start is reported as an error. The `milestones/windows` example shows both kinds.
+ - Milestones: dates can be relative to another milestone of the same project, e.g. `end: "M1.start + 6 months"`, `start: "M1.end - 10 days"` or `end: "start + 7 weeks"`, in days, weeks, months or years. Milestones can refer to each other in any order; unknown milestones and loops are reported as errors.
+
 ## [v0.2.0] - 2026-11-07
 
 ### Added

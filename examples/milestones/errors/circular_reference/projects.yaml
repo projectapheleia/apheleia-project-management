@@ -1,0 +1,12 @@
+# Error case: Dates that depend on each other
+# The report must fail with an error containing: depends on itself
+type: "projects_definitions"
+data:
+  - project: "Project Errors"
+    start: "2026-01-01"
+    end: "2027-01-01"
+    milestones:
+      - milestone: "M1"
+        date: "M2.date + 1 month"
+      - milestone: "M2"
+        date: "M1.date + 1 month"

@@ -1,0 +1,12 @@
+# Error case: A relative date with an unknown unit
+# The report must fail with an error containing: not a date or a relative date
+type: "projects_definitions"
+data:
+  - project: "Project Errors"
+    start: "2026-01-01"
+    end: "2027-01-01"
+    milestones:
+      - milestone: "M1"
+        date: "2026-02-01"
+      - milestone: "M2"
+        date: "M1.date + 3 fortnights"

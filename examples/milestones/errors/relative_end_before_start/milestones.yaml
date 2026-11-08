@@ -1,0 +1,7 @@
+type: "milestones_definitions"
+data:
+  - milestone: "M1"
+    description: "First"
+
+  - milestone: "M2"
+    description: "Second"

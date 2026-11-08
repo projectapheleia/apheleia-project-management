@@ -57,6 +57,31 @@ def milestone_badges(dates) -> list:
             badges.append('<span class="badge badge-upcoming">Upcoming</span>')
     return badges
 
+def milestone_dates_text(start, end) -> list:
+    """
+    Text for the date of each milestone, for tables.
+
+    A milestone on a single date is that date. A milestone with a start and end date shows both,
+    as "<start> to <end>". The end date is the date the milestone is due.
+
+    :param start: Start date of each milestone (missing for a single date milestone)
+    :type start: iterable
+    :param end: End date of each milestone, or its only date
+    :type end: iterable
+    :return: List of strings, one per milestone
+    :rtype: list
+    """
+
+    text = []
+    for s, e in zip(pd.to_datetime(list(start), errors="coerce"), pd.to_datetime(list(end), errors="coerce"), strict=True):
+        if pd.isna(e):
+            text.append("")
+        elif pd.isna(s):
+            text.append(f"{e:%Y-%m-%d}")
+        else:
+            text.append(f"{s:%Y-%m-%d} to {e:%Y-%m-%d}")
+    return text
+
 def value_to_filename(value : str) -> str:
     """
     Convert a string to a valid filename
@@ -75,5 +100,6 @@ __all__ = [
     "today",
     "smart_date_converter",
     "milestone_badges",
+    "milestone_dates_text",
     "value_to_filename"
 ]

@@ -13,7 +13,8 @@ def milestone_dates() -> pd.DataFrame:
     """
     Every date given to a milestone by a project, with whether it is that project's current milestone
 
-    :return: Dataframe with project, milestone, date and when (html badge) columns
+    :return: Dataframe with project, milestone, start, end and when (html badge) columns. The end is the
+             date the milestone is due; the start is blank for a milestone on a single date
     :rtype: pd.DataFrame
     """
 
@@ -27,8 +28,9 @@ def milestone_dates() -> pd.DataFrame:
         frames.append(ms)
 
     if not frames:
-        return pd.DataFrame(columns=["project", "milestone", "date", "when"])
-    return pd.concat(frames, ignore_index=True)[["project", "milestone", "date", "when"]]
+        return pd.DataFrame(columns=["project", "milestone", "start", "end", "when"])
+    out = pd.concat(frames, ignore_index=True).rename(columns={"date" : "end"})
+    return out[["project", "milestone", "start", "end", "when"]]
 
 class Milestone(Container):
 
@@ -58,12 +60,12 @@ class Milestone(Container):
 
         # Add to html
         dates = milestone_dates()
-        dates = dates[dates["milestone"] == self.name].drop(columns=["milestone"]).sort_values("date")
+        dates = dates[dates["milestone"] == self.name].drop(columns=["milestone"]).sort_values("end")
         if not dates.empty:
             tab = self.html.add_tab("Projects")
             tab.add_table("Projects Using This Milestone", dates.reset_index(drop=True),
-                          help="The projects that have given this milestone a date. The current milestone for a project "
-                               "is the next one due.")
+                          help="The projects that have given this milestone a date. A milestone on a single date has only "
+                               "an end date. The current milestone for a project is the next one due.")
 
         tab = self.html.add_tab("Details")
         tab.add_table("Milestone Details", df, transpose=True, help="Definition of this milestone as given in the milestones input file.")
@@ -125,7 +127,7 @@ class Milestones(Container):
             links = [f'<a href="{_html.escape(os.path.relpath(containers["project"][p].html.path, self.html.path.parent).replace(os.sep, "/"))}">'
                      f'{_html.escape(p)}</a>' for p in cur["project"] if p in containers.get("project", {})]
             current_for.append(", ".join(links))
-            next_due.append(cur["date"].min() if not cur.empty else pd.NaT)
+            next_due.append(cur["end"].min() if not cur.empty else pd.NaT)
 
         df = df.copy()
         df["when"] = ['<span class="badge badge-current">&#9679; Current milestone</span>' if c else "" for c in current_for]

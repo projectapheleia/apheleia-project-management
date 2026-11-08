@@ -25,4 +25,5 @@ venv/
 
 # Generated example reports
 examples/**/html/
+examples/.report-results/
 html/

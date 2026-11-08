@@ -8,7 +8,7 @@ import plotly.graph_objects as go
 
 from ._charts import BAR_WIDTH, EFFORT_COLORS, SCALES, _shade_bars, aggregate_by_period, gantt, stacked_bar, style_axes
 from ._containers import Container, containers
-from ._utils import milestone_badges, smart_date_converter, today
+from ._utils import milestone_badges, milestone_dates_text, smart_date_converter, today
 
 
 class Task(Container):
@@ -318,11 +318,12 @@ def project_milestones(project : str) -> pd.DataFrame:
 
     :param project: Name of the project
     :type project: str
-    :return: Dataframe with milestone and date columns (empty if there are none)
+    :return: Dataframe with milestone, date (when it is due, i.e. the end of a window) and start (windows
+             only) columns. Empty if there are none
     :rtype: pd.DataFrame
     """
 
-    empty = pd.DataFrame({"milestone" : [], "date" : pd.to_datetime([])})
+    empty = pd.DataFrame({"milestone" : [], "date" : pd.to_datetime([]), "start" : pd.to_datetime([])})
 
     proj = containers.get("project", {}).get(project)
     if proj is None or proj.imported_df is None or "milestones" not in proj.imported_df.columns:
@@ -332,8 +333,11 @@ def project_milestones(project : str) -> pd.DataFrame:
     if not items:
         return empty
 
-    ms = pd.DataFrame(items)[["milestone", "date"]]
-    ms["date"] = pd.to_datetime(ms["date"], errors="coerce")
+    ms = pd.DataFrame(items)
+    for col in ("date", "start", "end"):
+        ms[col] = pd.to_datetime(ms[col], errors="coerce") if col in ms.columns else pd.NaT
+    ms["date"] = ms["end"].fillna(ms["date"])
+    ms = ms[["milestone", "date", "start"]]
     return ms.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
 
 def task_info(df : pd.DataFrame) -> pd.DataFrame:
@@ -509,11 +513,12 @@ def milestone_task_summary(tasks : pd.DataFrame, milestones : pd.DataFrame=None,
 
     # Milestones, in date order
     if milestones is None or milestones.empty:
-        ms = pd.DataFrame({"milestone" : ["(no milestones)"], "date" : [pd.NaT], "description" : ["Project has no milestones"]})
+        ms = pd.DataFrame({"milestone" : ["(no milestones)"], "date" : [pd.NaT], "description" : ["Project has no milestones"], "start" : [pd.NaT]})
         t["_ms"] = 0
     else:
-        ms = milestones[["milestone", "date", "description"]].copy()
+        ms = milestones.reindex(columns=["milestone", "date", "description", "start"])
         ms["date"] = pd.to_datetime(ms["date"], errors="coerce")
+        ms["start"] = pd.to_datetime(ms["start"], errors="coerce")
         ms = ms.sort_values("date").reset_index(drop=True)
 
         def assign(end):
@@ -526,10 +531,11 @@ def milestone_task_summary(tasks : pd.DataFrame, milestones : pd.DataFrame=None,
 
         # Tasks finishing after the last milestone
         if (t["_ms"] == len(ms)).any():
-            ms.loc[len(ms)] = [f"After {ms['milestone'].iloc[-1]}", pd.NaT, "Tasks forecast to finish after the last milestone"]
+            ms.loc[len(ms)] = [f"After {ms['milestone'].iloc[-1]}", pd.NaT, "Tasks forecast to finish after the last milestone", pd.NaT]
 
     # Current milestone: the next one due
     ms["when"] = milestone_badges(ms["date"])
+    ms["text"] = milestone_dates_text(ms["start"], ms["date"])
 
     rows = []
     for i, m in ms.iterrows():
@@ -544,7 +550,7 @@ def milestone_task_summary(tasks : pd.DataFrame, milestones : pd.DataFrame=None,
 
         rows.append({
             "milestone" : m["milestone"],
-            "date" : m["date"],
+            "date" : m["text"],
             "description" : m["description"],
             "when" : when,
             "tasks" : (f'<a href="{_html.escape(tasks_href, quote=True)}" '

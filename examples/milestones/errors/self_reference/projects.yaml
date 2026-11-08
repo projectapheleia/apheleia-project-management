@@ -1,0 +1,11 @@
+# Error case: A date relative to itself
+# The report must fail with an error containing: depends on itself
+type: "projects_definitions"
+data:
+  - project: "Project Errors"
+    start: "2026-01-01"
+    end: "2027-01-01"
+    milestones:
+      - milestone: "M1"
+        start: "2026-02-01"
+        end: "end + 1 month"

@@ -1,0 +1,11 @@
+# Error case: A milestone that ends before it starts
+# The report must fail with an error containing: before it starts
+type: "projects_definitions"
+data:
+  - project: "Project Errors"
+    start: "2026-01-01"
+    end: "2027-01-01"
+    milestones:
+      - milestone: "M1"
+        start: "2026-04-01"
+        end: "2026-02-01"
