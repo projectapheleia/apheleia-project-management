@@ -17,12 +17,18 @@ COLUMN_HELP = {
     "resources": "All resources allocated to this workpackage.",
     "milestone": "Milestone identifier. Milestones are shared checkpoints (e.g. M3) that projects give dates to.",
     "description": "Free-text description of the item.",
+    "milestone range": "The date the workpackage must end by, which is the date of its milestone in the project. Starting earlier is fine.",
+    "milestone check": "Whether the workpackage ends by its milestone, to the month. OUTSIDE MILESTONE says why it does not. Empty means no milestone was given.",
+    "estimate check": "Whether the effort allocated to the workpackage is within its estimate. OVER ESTIMATE says by how much it is over. No estimate means there is nothing to check.",
+    "check": "Whether the workpackage passes this check, and if not why. See the guidance on the table.",
+    "problem": "What is wrong with the workpackage.",
     "start": "Planned start date (YYYY-MM-DD). For workpackage allocations this is the first allocated month. For tasks, a note in brackets shows the date was not given and defaults to the previous milestone.",
     "end": "Planned end date (YYYY-MM-DD). Empty means open-ended - charts extend these bars to the default horizon.",
     "date": "Date the milestone is planned to be reached (YYYY-MM-DD).",
     "uname": "Short user name / login of the resource.",
     "profile": "Link to further information about the resource.",
-    "effort": "Total allocated effort, in person-months, summed over all allocation periods.",
+    "effort": "Total allocated effort, summed over all allocation periods. Shown in the unit chosen in the Units box (default man-months).",
+    "allocated": "Total effort allocated to the workpackage (allocation x months, over all its allocations), in the unit chosen in the Units box.",
     "status.date": "Date of the status update (YYYY-MM-DD). The most recent update is the current position.",
     "status.spent": "Effort already spent on the task, in days, as of the status date.",
     "status.remaining": "Estimated effort still required to complete the task, in days. 0 means complete.",
@@ -32,7 +38,7 @@ COLUMN_HELP = {
     "over estimate": "Tasks (and days) that are past their estimate, i.e. spent plus remaining effort is more than the estimate.",
     "over by": "Days by which spent plus remaining effort exceeds the estimate.",
     "% over": "Over-run as a percentage of the estimate.",
-    "estimate": "Original effort estimate for the task, in days. MISSING means no estimate was provided for the task.",
+    "estimate": "Original effort estimate. For a task it is in days and MISSING means none was provided. For a workpackage it is in the unit chosen in the Units box, and empty means none was given.",
     "variance": "Spent plus remaining effort minus the estimate, in days. Positive means the task is expected to overrun.",
     "no estimate": "Number of these tasks that have no estimate.",
     "tasks": "Number of tasks needed by this milestone: those forecast to finish on or before its date (and after the previous milestone).",
@@ -545,7 +551,8 @@ $(document).ready(function() {
 
     function tryNumber(s) {
         if (s === null || s === undefined) return NaN;
-        s = String(s).replace(/[, £$%]/g, '').trim();
+        s = String(s).trim().replace(/^(-?[\d.]+)\s*(my|mm|mw|md)$/, '$1');
+        s = s.replace(/[, £$%]/g, '').trim();
         if (s === '') return NaN;
         var n = Number(s);
         return isNaN(n) ? NaN : n;
@@ -567,7 +574,7 @@ $(document).ready(function() {
         $table.find('thead tr').clone(true).appendTo($table.find('thead'));
         $table.find('thead tr:eq(1) th').each(function() {
             var title = $(this).text().trim();
-            $(this).removeAttr('data-tip').html('<input type="text" placeholder="Filter ' + title + '" data-tip="' +
+            $(this).removeAttr('data-tip').html('<input type="text" class="col-filter" placeholder="Filter ' + title + '" data-tip="' +
                                                 FILTER_TIP.replace(/"/g, '&quot;') + '" />');
         });
 
@@ -652,7 +659,7 @@ $(document).ready(function() {
     });
 
     // Redraw when filters change
-    $(document).on('keyup change input', 'table thead tr:eq(1) th input', function() {
+    $(document).on('keyup change input search', 'input.col-filter', function() {
         $(this).closest('table').DataTable().draw();
     });
 
@@ -778,6 +785,43 @@ $(document).ready(function() {
     window.dispatchEvent(new Event('resize'));
 });
 
+var EFFORT_UNITS = {my : 12, mm : 1, mw : 0.25, md : 0.05};   // man-months in one of each unit
+
+// Effort cells: <span class="effort" data-mm="<man-months>">. Sort them by value. Empty cells (no estimate) sort first
+$.fn.dataTable.ext.type.detect.unshift(function(d) {
+    return (d === '' || (typeof d === 'string' && /^<span class="effort"[^>]*>[^<]*<\/span>$/.test(d))) ? 'effort' : null;
+});
+$.fn.dataTable.ext.type.order['effort-pre'] = function(d) {
+    var m = /data-mm="([^"]*)"/.exec(d);
+    return m ? parseFloat(m[1]) : -Infinity;
+};
+
+function formatEffort(mm, unit) {
+    var v = mm / EFFORT_UNITS[unit];
+    return String(parseFloat(v.toFixed(2))) + ' ' + unit;
+}
+
+function setEffortUnit(unit, remember) {
+    document.querySelectorAll('span.effort').forEach(function(e) {
+        e.textContent = formatEffort(parseFloat(e.dataset.mm), unit);
+    });
+    document.querySelectorAll('select.effort-unit').forEach(function(sel) { sel.value = unit; });
+    // Tables cache their cells, so read them again to sort and filter on the new unit
+    $('table.dataframe').each(function() {
+        if ($.fn.dataTable.isDataTable(this) && $(this).find('span.effort').length) {
+            $(this).DataTable().rows().invalidate('dom').draw(false);
+        }
+    });
+    if (remember) { try { localStorage.setItem('apheleia-effort-unit', unit); } catch (e) {} }
+}
+
+$(document).ready(function() {
+    var unit = 'mm';
+    try { unit = localStorage.getItem('apheleia-effort-unit') || 'mm'; } catch (e) {}
+    if (!EFFORT_UNITS[unit]) unit = 'mm';
+    if (unit !== 'mm') setEffortUnit(unit, false);
+});
+
 function setTicks(sel) {
     var o = sel.options[sel.selectedIndex];
     sel.closest('.card').querySelectorAll('.js-plotly-plot').forEach(function(p) {
@@ -860,7 +904,7 @@ class HTMLTab:
 
         return f'\n<section class="card {kind}-card">{heading}<div class="card-body">{body}</div></section>\n'
 
-    def add_table(self, title : str, df : pd.DataFrame, transpose=False, help : str="") -> None:
+    def add_table(self, title : str, df : pd.DataFrame, transpose=False, help : str="", units : bool=False) -> None:
         """
         Add a table to the html file
 
@@ -868,6 +912,7 @@ class HTMLTab:
         :param df: Data
         :param transpose: Show as a field / value table (one row per column of df)
         :param help: Hover guidance explaining what the table means
+        :param units: Add a select box for the unit of effort. Effort in the table is written as html spans from _workpackages.format_months
         """
 
         if transpose:
@@ -878,7 +923,16 @@ class HTMLTab:
         else:
             table = self.format_df_for_html(df).to_html(index=False, escape=False)
 
-        self.sections.append(self._card(title, help, TABLE_TIP, f'<div class="table-wrap">{table}</div>', "table"))
+        controls = ""
+        if units:
+            controls = ('<label class="scale-select">Units '
+                        '<select class="effort-unit" onchange="setEffortUnit(this.value, true)" '
+                        'data-tip="Show effort in man-years (my), man-months (mm), man-weeks (mw) or man-days (md). '
+                        'A man-month is 4 man-weeks or 20 man-days, and a man-year is 12 man-months.">'
+                        '<option value="my">my</option><option value="mm" selected>mm</option>'
+                        '<option value="mw">mw</option><option value="md">md</option></select></label>')
+
+        self.sections.append(self._card(title, help, TABLE_TIP, f'<div class="table-wrap">{table}</div>', "table", controls=controls))
 
     def _click_script(self, chart) -> str:
         """

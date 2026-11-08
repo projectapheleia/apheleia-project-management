@@ -9,7 +9,15 @@ from ._charts import gantt
 from ._containers import Container, containers
 from ._tasks import milestone_task_summary, tasks_over_estimate
 from ._utils import milestone_badges, milestone_dates_text, smart_date_converter, today
-from ._workpackages import MILESTONE_HELP, check_milestones, create_allocation_chart, workpackages_outside_milestone
+from ._workpackages import (
+    ESTIMATE_HELP,
+    MILESTONE_HELP,
+    check_milestones,
+    create_allocation_chart,
+    workpackage_table,
+    workpackages_outside_milestone,
+    workpackages_over_estimate,
+)
 
 DATE_FIELDS = ("date", "start", "end")
 """ Fields of a project milestone that hold dates """
@@ -189,6 +197,13 @@ class Project(Container):
             else:
                 tab.add_table("Workpackages Outside Milestone", outside, help=MILESTONE_HELP)
 
+            over = workpackages_over_estimate(wp_df)
+            if over.empty:
+                tab.add_paragraph("Workpackages Over Estimate", "No workpackages are allocated more effort than their estimate.",
+                                  help=ESTIMATE_HELP)
+            else:
+                tab.add_table("Workpackages Over Estimate", over, help=ESTIMATE_HELP, units=True)
+
         # Add Timeline gantt
         tab = self.html.add_tab("Timeline")
         tab.add_chart("Project Timeline", gantt(
@@ -236,7 +251,7 @@ class Project(Container):
                                                 )
             )
             tab.add_chart("Workpackage Allocations", create_allocation_chart(wp_raw_df, "allocations.resource"))
-            tab.add_table("Workpackages", check_milestones(wp_summary_df), help=MILESTONE_HELP)
+            tab.add_table("Workpackages", workpackage_table(wp_summary_df), help=MILESTONE_HELP + " " + ESTIMATE_HELP, units=True)
 
         # Add details table
         tab = self.html.add_tab("Details")

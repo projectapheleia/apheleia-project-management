@@ -1,0 +1,52 @@
+# Each workpackage below is allocated 6 person-months in total.
+#
+# An estimate is a number and a unit, with or without a space between them:
+#   md   man-days    (20 man-days = 1 man-month)
+#   mm   man-months
+#   my   man-years   (1 man-year = 12 man-months)
+# The report compares it with the effort allocated (allocation x months) and marks
+# workpackages allocated more than their estimate as OVER ESTIMATE.
+type: "workpackages_definitions"
+data:
+  # No estimate: nothing to check against
+  - workpackage: "No Estimate"
+    project: "Project Estimates"
+    description: "Allocated 6 mm, no estimate given"
+    allocations:
+        - start: "2026-01"
+          end: "2026-06"
+          resource: "Mickey Mouse"
+          allocation: 1.0
+
+  # Generous estimate: 12 mm estimated, 6 mm allocated, so within the estimate
+  - workpackage: "Generous Estimate"
+    project: "Project Estimates"
+    description: "Allocated 6 mm against an estimate of 1 man-year (12 mm)"
+    estimate: "1 my"
+    allocations:
+        - start: "2026-01"
+          end: "2026-06"
+          resource: "Daffy Duck"
+          allocation: 1.0
+
+  # Low estimate: 3 mm estimated (60 md), 6 mm allocated, so over the estimate by 3 mm
+  - workpackage: "Low Estimate"
+    project: "Project Estimates"
+    description: "Allocated 6 mm against an estimate of 60 man-days (3 mm)"
+    estimate: "60md"
+    allocations:
+        - start: "2026-07"
+          end: "2026-12"
+          resource: "Mickey Mouse"
+          allocation: 1.0
+
+  # Exact estimate: allocated exactly the estimate, which is not over it
+  - workpackage: "Exact Estimate"
+    project: "Project Estimates"
+    description: "Allocated 6 mm against an estimate of 6 mm"
+    estimate: "6 mm"
+    allocations:
+        - start: "2026-07"
+          end: "2026-12"
+          resource: "Daffy Duck"
+          allocation: 1.0

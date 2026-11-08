@@ -33,6 +33,9 @@ Fields
    * - ``milestone``
      - No
      - Milestone the workpackage is working towards, see below
+   * - ``estimate``
+     - No
+     - Original estimate of the effort for the workpackage, e.g. ``5 mm``, see below
    * - ``allocations``
      - Yes
      - List of resource allocations, see below
@@ -90,6 +93,67 @@ Workpackages that end after their milestone, or whose milestone has no date in t
 ``OUTSIDE MILESTONE`` with the reason in the workpackage tables, and listed under *Workpackages Outside Milestone* \
 on the project summary. Workpackages with no ``milestone`` are not checked.
 
+Estimates
+---------
+
+A workpackage can be given the effort it was originally estimated at using ``estimate``: a number followed by a unit.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 15 25 60
+
+   * - Unit
+     - Meaning
+     - Equivalent
+   * - ``md``
+     - Man-days
+     - 20 man-days is 1 man-month
+   * - ``mw``
+     - Man-weeks
+     - 5 man-days is 1 man-week, or 4 man-weeks is 1 man-month
+   * - ``mm``
+     - Man-months
+     - The unit of allocated effort
+   * - ``my``
+     - Man-years
+     - 1 man-year is 12 man-months
+
+Spaces are optional and the unit is not case sensitive, so ``5 mm``, ``5mm`` and ``5 MM`` are the same. The number \
+can have decimals, e.g. ``2.5 mm``.
+
+The report adds up the effort allocated to the workpackage (allocation x months, over all its allocations) and \
+compares it with the estimate. A workpackage allocated more than its estimate is marked ``OVER ESTIMATE`` in red, \
+with how far over it is, in the workpackage tables and its own page, and listed under *Workpackages Over Estimate* \
+on the project summary. A workpackage within its estimate shows how much of it is allocated, and one with no \
+``estimate`` is not checked.
+
+Every table of workpackages has a *Units* select box, to show effort in man-years (``my``), man-months (``mm``, \
+the default), man-weeks (``mw``) or man-days (``md``). It changes the effort, estimate and allocated columns and \
+the messages in them, on every table on the page, and is remembered by the browser for other pages.
+
+Mistakes that are caught
+------------------------
+
+An estimate that cannot be understood stops the report with a message starting ``ERROR :`` naming the workpackage, \
+and no report is produced.
+
+.. list-table::
+   :header-rows: 1
+   :widths: 40 60
+
+   * - Problem
+     - How to fix it
+   * - A number with no unit, such as ``"5"`` or ``5``
+     - Add a unit, e.g. ``"5 mm"``
+   * - An unknown unit, such as ``weeks``
+     - Use ``md``, ``mw``, ``mm`` or ``my``
+   * - Something that is not a number, such as ``"lots mm"``
+     - Write a number followed by a unit
+   * - An estimate of zero or less
+     - Use an estimate greater than 0, or remove it
+
+The ``examples/workpackages/errors`` directory has a small example of each of these.
+
 Example
 -------
 
@@ -100,3 +164,9 @@ The effort allocated to a project's workpackages, stacked by resource:
 
 .. image:: /images/workpackage_allocations.png
    :align: center
+
+The ``workpackages/estimates`` example has a workpackage with no estimate, one with a generous estimate, one with \
+a low estimate (so it is over) and one allocated exactly its estimate:
+
+.. literalinclude:: ../../../examples/workpackages/estimates/workpackages.yaml
+    :language: yaml

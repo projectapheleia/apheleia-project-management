@@ -1,0 +1,4 @@
+type: "resources_definitions"
+data:
+  - resource: "Mickey Mouse"
+    start: "2026-01-01"

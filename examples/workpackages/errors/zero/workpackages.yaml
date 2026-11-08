@@ -1,0 +1,10 @@
+type: "workpackages_definitions"
+data:
+  - workpackage: "Bad Estimate"
+    project: "Project Errors"
+    estimate: "0 md"
+    allocations:
+        - start: "2026-01"
+          end: "2026-06"
+          resource: "Mickey Mouse"
+          allocation: 1.0

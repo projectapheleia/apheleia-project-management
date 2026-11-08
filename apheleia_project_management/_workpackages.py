@@ -1,3 +1,4 @@
+import re
 from pathlib import Path
 
 import pandas as pd
@@ -26,6 +27,32 @@ MILESTONE_HELP = ("Milestone is the milestone the workpackage is working towards
                   "whose milestone has no date in the project, are marked OUTSIDE MILESTONE.")
 """ Hover guidance for the milestone columns """
 
+
+OVER = '<span class="badge badge-over">OVER ESTIMATE</span>'
+""" Shown against a workpackage whose allocations total more than its estimate """
+
+UNDER = '<span class="badge badge-upcoming">Within estimate</span>'
+""" Shown against a workpackage whose allocations total no more than its estimate """
+
+NO_ESTIMATE = "No estimate"
+""" Shown against a workpackage with no estimate """
+
+ESTIMATE_HELP = ("Estimate is the effort the workpackage was originally estimated at. Allocated is the total effort allocated "
+                 "to it (allocation x months, summed over its allocations). Workpackages whose allocated effort is more than "
+                 "their estimate are marked OVER ESTIMATE. Workpackages with no estimate cannot be checked.")
+""" Hover guidance for the estimate columns """
+
+DAYS_PER_MONTH = 20
+""" Man-days in a man-month """
+
+MONTHS_PER_YEAR = 12
+""" Man-months in a man-year """
+
+DAYS_PER_WEEK = 5
+""" Man-days in a man-week """
+
+ESTIMATE_UNITS = {"md" : 1 / DAYS_PER_MONTH, "mw" : DAYS_PER_WEEK / DAYS_PER_MONTH, "mm" : 1.0, "my" : float(MONTHS_PER_YEAR)}
+""" Man-months in one of each estimate unit """
 
 class Workpackage(Container):
 
@@ -70,6 +97,11 @@ class Workpackage(Container):
         if checked["milestone"].notna().any():
             tab.add_table("Milestone", checked[["workpackage", "milestone", "milestone range", "milestone check"]]
                           .rename(columns={"milestone check" : "check"}), help=MILESTONE_HELP)
+
+        # Estimate
+        if self.summary_df["estimate"].notna().any():
+            tab.add_table("Estimate", check_estimates(self.summary_df)[["workpackage", "estimate", "allocated", "estimate check"]]
+                          .rename(columns={"estimate check" : "check"}), help=ESTIMATE_HELP, units=True)
 
         # Add Resource allocation stacked bar to html
         tab = self.html.add_tab("Allocations")
@@ -149,7 +181,8 @@ class WorkPackages(Container):
                     "allocations.resource",
                     "allocations.allocation",
                     "description",
-                    "milestone"
+                    "milestone",
+                    "estimate"
                 ]
 
         self.check_definitions(definitions, "workpackage")
@@ -157,8 +190,11 @@ class WorkPackages(Container):
         # No workpackages defined
         if not definitions:
             self.imported_df = pd.DataFrame(columns=columns)
-            self.summary_df = pd.DataFrame(columns=["workpackage", "project", "start", "end", "resources", "effort", "description", "milestone"])
+            self.summary_df = pd.DataFrame(columns=["workpackage", "project", "start", "end", "resources", "effort", "description", "milestone", "estimate"])
             return
+
+        # Estimates in man-months, so that every report page uses the same parsed value
+        estimates = {d["workpackage"] : parse_estimate(d.get("estimate"), d["workpackage"]) for d in definitions}
 
         # Every workpackage needs at least one allocation
         for d in definitions:
@@ -191,6 +227,7 @@ class WorkPackages(Container):
         df = pd.concat([self.imported_df, df], ignore_index=True)
         df = df[columns]
         self.summary_df = summarize_df(df)
+        self.summary_df["estimate"] = self.summary_df["workpackage"].map(estimates).astype(float)
 
         # Create child projects
         for p in definitions:
@@ -233,7 +270,7 @@ class WorkPackages(Container):
 
         # Add table to html
         tab = self.html.add_tab("Workpackages")
-        tab.add_table("Workpackages", check_milestones(self.summary_df), help=MILESTONE_HELP)
+        tab.add_table("Workpackages", workpackage_table(self.summary_df), help=MILESTONE_HELP + " " + ESTIMATE_HELP, units=True)
 
         super().export_html()
 
@@ -290,6 +327,119 @@ def check_milestones(summary_df : pd.DataFrame) -> pd.DataFrame:
     df["milestone date"] = pd.to_datetime(pd.Series(dates, index=df.index))
     return df
 
+def parse_estimate(value, workpackage : str = "") -> (float | None):
+    """
+    Convert an estimate to man-months
+
+    An estimate is a number followed by a unit: md (man-days), mw (man-weeks), mm (man-months) or my (man-years), e.g.
+    "5 mm". Whitespace between the number and unit is optional and the unit is not case sensitive.
+    A man-month is 20 man-days and a man-year is 12 man-months.
+
+    :param value: Estimate as given in the workpackage definition, or None / empty for no estimate
+    :param workpackage: Name of the workpackage, for error messages
+    :type workpackage: str
+    :return: Estimate in man-months, or None if there is no estimate
+    :rtype: float | None
+    """
+
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return None
+
+    units = ", ".join(ESTIMATE_UNITS)
+    where = f"workpackage {workpackage} estimate {value!r}"
+
+    if not isinstance(value, str):
+        raise ValueError(f"{where} must be a number followed by a unit ({units}), e.g. \"5 mm\"")
+    if value.strip() == "":
+        return None
+
+    m = re.fullmatch(r"\s*([+-]?(?:\d+(?:\.\d*)?|\.\d+))\s*([A-Za-z-]*)\s*", value)
+    if m is None:
+        raise ValueError(f"{where} is not understood. It must be a number followed by a unit ({units}), e.g. \"5 mm\"")
+    number, unit = float(m.group(1)), m.group(2).lower()
+    if unit == "":
+        raise ValueError(f"{where} has no unit. Use md (man-days), mw (man-weeks), mm (man-months) or my (man-years), e.g. \"5 mm\"")
+    if unit not in ESTIMATE_UNITS:
+        raise ValueError(f"{where} has unknown unit {m.group(2)!r}. Use md (man-days), mw (man-weeks), mm (man-months) or my (man-years)")
+    if number <= 0:
+        raise ValueError(f"{where} must be greater than 0")
+
+    return number * ESTIMATE_UNITS[unit]
+
+def format_months(months : float) -> str:
+    """
+    Html for an effort in man-months
+
+    The page has a select box for the unit of effort, which rewrites the text of these spans.
+
+    :param months: Effort in man-months
+    :type months: float
+    :return: Html such as <span class="effort" data-mm="5.000000">5 mm</span>
+    :rtype: str
+    """
+    text = f"{months:.2f}".rstrip("0").rstrip(".")
+    return f'<span class="effort" data-mm="{months:.6f}">{text} mm</span>'
+
+def check_estimates(summary_df : pd.DataFrame) -> pd.DataFrame:
+    """
+    Check the effort allocated to each workpackage is not above its estimate
+
+    Workpackages with no estimate are not checked.
+
+    :param summary_df: One row per workpackage, with effort and estimate (NaN for none) columns, in man-months
+    :type summary_df: pd.DataFrame
+    :return: Copy of the dataframe with estimate and allocated as html, an estimate check (html) column and an
+             over by column, the man-months allocated above the estimate (NaN for no estimate, 0 or less within it)
+    :rtype: pd.DataFrame
+    """
+
+    df = summary_df.copy()
+    checks = []
+
+    for effort, estimate in zip(df["effort"].astype(float), df["estimate"].astype(float), strict=True):
+        if pd.isna(estimate):
+            checks.append(NO_ESTIMATE)
+        elif effort > estimate + 1e-9:
+            checks.append(f"{OVER} allocated {format_months(effort)} is {format_months(effort - estimate)} over "
+                          f"the estimate of {format_months(estimate)}")
+        else:
+            checks.append(f"{UNDER} allocated {format_months(effort)} of {format_months(estimate)} ({effort / estimate:.0%})")
+
+    df["over by"] = df["effort"].astype(float) - df["estimate"].astype(float)
+    df["estimate"] = [format_months(e) if pd.notna(e) else "" for e in df["estimate"]]
+    df["allocated"] = [format_months(e) for e in df["effort"]]
+    df["estimate check"] = checks
+    return df
+
+def workpackages_over_estimate(summary_df : pd.DataFrame) -> pd.DataFrame:
+    """
+    The workpackages whose allocated effort is more than their estimate
+
+    :param summary_df: One row per workpackage
+    :type summary_df: pd.DataFrame
+    :return: Workpackage, estimate, allocated and the reason it is over, worst first
+    :rtype: pd.DataFrame
+    """
+
+    df = check_estimates(summary_df)
+    df = df[df["over by"] > 1e-9].sort_values("over by", ascending=False)
+    df = df[["workpackage", "estimate", "allocated", "estimate check"]]
+    return df.rename(columns={"estimate check" : "problem"}).reset_index(drop=True)
+
+def workpackage_table(summary_df : pd.DataFrame) -> pd.DataFrame:
+    """
+    The table of workpackages shown in the report: milestone and estimate checks, with effort as html
+
+    :param summary_df: One row per workpackage
+    :type summary_df: pd.DataFrame
+    :return: Dataframe for add_table
+    :rtype: pd.DataFrame
+    """
+
+    df = check_estimates(check_milestones(summary_df)).drop(columns=["outside", "milestone date", "over by"])
+    df["effort"] = df["allocated"]
+    return df.drop(columns=["allocated"])
+
 def workpackages_outside_milestone(summary_df : pd.DataFrame) -> pd.DataFrame:
     """
     The workpackages that fall outside the range of their milestone
@@ -314,6 +464,13 @@ def summarize_df(df : pd.DataFrame) -> pd.DataFrame:
     :return: pd.DataFrame
     :rtype: pd.DataFrame
     """
+
+    # Effort of each allocation is the fraction of a person x the number of months, inclusive
+    df = df.copy()
+    start = pd.to_datetime(df["allocations.start"])
+    end = pd.to_datetime(df["allocations.end"])
+    months = (end.dt.year - start.dt.year) * 12 + (end.dt.month - start.dt.month) + 1
+    df["allocations.allocation"] = df["allocations.allocation"].astype(float) * months
 
     # Define the aggregation rules
     agg_rules = {
@@ -418,6 +575,11 @@ __all__ = [
     "WorkPackages",
     "summarize_df",
     "check_milestones",
+    "check_estimates",
+    "workpackage_table",
+    "format_months",
+    "parse_estimate",
+    "workpackages_over_estimate",
     "workpackages_outside_milestone",
     "create_allocation_chart",
 ]

@@ -58,6 +58,19 @@ and relative dates that refer to an unknown milestone or to themselves. ``make r
 report on each and passes only if the report fails with a non-zero exit status and the expected ``ERROR :`` \
 message, and does not generate a report.
 
+Workpackages
+------------
+
+``examples/workpackages``
+
+``estimates`` shows workpackages allocated the same effort (6 person-months) with no estimate, a generous estimate \
+of 1 man-year, a low estimate of 60 man-days (so it is flagged ``OVER ESTIMATE``) and an estimate equal to the \
+allocation.
+
+``errors`` has one directory for each way an estimate can be invalid: an unknown unit, no unit, a bare number, \
+something that is not a number, a negative estimate and zero. ``make report`` in ``errors`` checks each fails in \
+the same way as the milestone error cases.
+
 Resources
 ---------
 

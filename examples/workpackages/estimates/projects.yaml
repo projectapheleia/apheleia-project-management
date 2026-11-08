@@ -1,0 +1,6 @@
+type: "projects_definitions"
+data:
+  - project: "Project Estimates"
+    start: "2026-01-01"
+    end: "2026-12-31"
+    description: "Example of workpackage estimates"
