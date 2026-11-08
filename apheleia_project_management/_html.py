@@ -1477,6 +1477,7 @@ class HTML:
         :return: None
         """
 
+        self.path.parent.mkdir(parents=True, exist_ok=True)
         with open(self.path, "w", encoding="utf-8") as f:
             f.write(str(self))
 

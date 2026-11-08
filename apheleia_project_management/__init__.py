@@ -102,10 +102,6 @@ def create_containers(path : Path, data : dict[str, dict]) -> None:
     :return: None
     """
 
-    # Create directory if needed
-    if not path.exists():
-        path.mkdir(parents=True)
-
     # How the report looks
     _format.use(_format.configure(data.get("format", []), data.get("themes", [])))
 

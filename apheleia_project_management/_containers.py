@@ -24,9 +24,6 @@ class Container:
         self.path = path
         """ Path to container """
 
-        if not self.path.exists():
-            self.path.mkdir(parents=True)
-
         self.imported_df = None
         """ Dataframe containing all imported data """
 

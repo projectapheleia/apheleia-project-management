@@ -95,6 +95,13 @@ tasks are forecast from and stale tasks are checked against. It defaults to the 
 to make the same report whatever day it is run, as every example does, or `None` for a report with no date, which \
 forecasts from the latest status updates and checks against the latest update in the input.
 
+To check the input without generating a report, for example before a commit or in CI, use `--check`. It prints any \
+`ERROR :` and exits with status 1, or exits with status 0 if the input is valid, and writes nothing. `--html` is not needed.
+
+```sh
+apheleia_project_report --check --input <input directory>
+```
+
 >**NOTE**:
 >The charting and table libraries are loaded from their public CDNs, so an internet connection is required to view the report.
 

@@ -34,6 +34,9 @@ def main():
 
     parser.add_argument("--input", type=str, help="Input directory path", default=".")
     parser.add_argument("--html", type=str, help="Output directory path for html", default="./html")
+    parser.add_argument("--check", action="store_true",
+                        help="Only check the input: report any problems and exit, without writing a report. "
+                             "The exit status is 0 if the input is valid and 1 if it is not")
     parser.add_argument("--today", type=str, default=None, metavar="YYYY-MM-DD|None",
                         help="Report date: the day the report is made for (default: the day it is run). Today is marked "
                              "on the charts, forecasts start from it and tasks are checked against it for being stale. "
@@ -54,6 +57,11 @@ def main():
     except ValueError as e:
         print(f"ERROR : {e}", file=sys.stderr)
         sys.exit(1)
+
+    if args.check:
+        counts = ", ".join(f"{len(v)} {k}" for k, v in data.items() if k not in ("format", "themes"))
+        print(f"OK : input checked, no problems found ({counts})")
+        return
 
     # Export HTML
     export_to_html(Path(args.html).resolve())

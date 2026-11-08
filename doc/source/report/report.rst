@@ -14,6 +14,12 @@ To generate a report, run the script with the following command:
 
     $ apheleia_project_report --input <input directory> --html <output directory> [--today YYYY-MM-DD|None]
 
+To check the input without generating a report, add ``--check`` (see `Checking the input`_):
+
+.. code-block:: shell
+
+    $ apheleia_project_report --check --input <input directory>
+
 .. list-table::
    :header-rows: 1
    :widths: 20 20 60
@@ -27,6 +33,10 @@ To generate a report, run the script with the following command:
    * - ``--html``
      - ``./html``
      - Directory the report is written to. It is created if it does not exist
+   * - ``--check``
+     - off
+     - Only check the input: report any problems and exit, without writing a report. ``--html`` is not needed. \
+       See `Checking the input`_
    * - ``--today``
      - the day it is run
      - The report date: the day the report is made for, as ``YYYY-MM-DD``, or ``None`` for a report with no date. \
@@ -90,6 +100,20 @@ not yet defined say so. A plan can therefore be built up a file at a time.
 
 The title, logo, colours and fonts of the report can be changed with YAML files in the input directory, \
 and the theme chooser at the top right of every page lists the themes available. See :doc:`format`.
+
+Checking the input
+------------------
+
+``--check`` reads and validates the input in exactly the same way as when a report is generated, but stops \
+there. Nothing is written, so it is quick and can be used before a commit or in a CI job:
+
+.. code-block:: text
+
+    $ apheleia_project_report --check --input plan
+    OK : input checked, no problems found (11 milestones, 3 resources, 2 projects, 3 workpackages, 4 tasks)
+
+If a problem is found the ``ERROR :`` line described above is printed and the exit status is 1. Warnings are still \
+printed. The exit status is 0 if the input is valid, whatever the warnings.
 
 Report Structure
 ----------------

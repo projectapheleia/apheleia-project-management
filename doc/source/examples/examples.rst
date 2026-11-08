@@ -63,9 +63,9 @@ end date, drawn as a window, and dates relative to other milestones.
 
 ``errors`` has one directory for each way a milestone can be invalid: a date mixed with a start or end, only a \
 start or an end, an end before the start, unexpected fields, duplicate milestones, dates that cannot be read, \
-and relative dates that refer to an unknown milestone or to themselves. ``make report`` in ``errors`` runs the \
-report on each and passes only if the report fails with a non-zero exit status and the expected ``ERROR :`` \
-message, and does not generate a report.
+and relative dates that refer to an unknown milestone or to themselves. ``make report`` in ``errors`` runs \
+``apheleia_project_report --check`` on each and passes only if it fails with a non-zero exit status and the \
+expected ``ERROR :`` message, and writes nothing.
 
 Workpackages
 ------------
