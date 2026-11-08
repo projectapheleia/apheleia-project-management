@@ -1,0 +1,6 @@
+type: "themes_definitions"
+data:
+  - name: "a"
+    extends: "b"
+  - name: "b"
+    extends: "a"

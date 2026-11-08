@@ -4,6 +4,7 @@ from pathlib import Path
 
 import yaml
 
+from . import _format
 from ._containers import containers
 from ._html import HTML
 from ._milestones import Milestones
@@ -35,6 +36,10 @@ def import_from_yaml(path : Path) -> None:
     }
 
     types = {f"{k}_definitions" : k for k in data}
+
+    # How the report looks. These are not project data, so their values are used as they are
+    look = {"format" : [], "themes" : []}
+    types.update({f"{k}_definitions" : k for k in look})
     found = 0
 
     for file_path in sorted(path.rglob("*.yaml")):
@@ -53,17 +58,32 @@ def import_from_yaml(path : Path) -> None:
                   f"Expected one of: {', '.join(types)}", file=sys.stderr)
             continue
 
+        if k == "format":
+            # A single mapping, or a list of them
+            items = content.get("data") or {}
+            items = items if isinstance(items, list) else [items]
+            if not all(isinstance(d, dict) for d in items):
+                raise ValueError(f"{file_path}: data must be a mapping of format settings")
+            found += 1
+            look[k] += [{**d, _format.SOURCE : file_path} for d in items]
+            continue
+
         definitions = content.get("data") or []
         if not isinstance(definitions, list) or not all(isinstance(d, dict) for d in definitions):
             raise ValueError(f"{file_path}: data must be a list of {k} definitions")
 
         found += 1
+        if k == "themes":
+            look[k] += [{**d, _format.SOURCE : file_path} for d in definitions]
+            continue
+
         for d in definitions:
             data[k].append({_k : smart_date_converter(_v) for _k, _v in d.items()})
 
     if found == 0:
         print(f"WARNING : no input files found in {path}", file=sys.stderr)
 
+    data.update(look)
     return data
 
 def create_containers(path : Path, data : dict[str, dict]) -> None:
@@ -81,8 +101,13 @@ def create_containers(path : Path, data : dict[str, dict]) -> None:
     if not path.exists():
         path.mkdir(parents=True)
 
+    # How the report looks
+    _format.use(_format.configure(data.get("format", []), data.get("themes", [])))
+
     # Create container classes and import data
     for k,v in data.items():
+        if k in ("format", "themes"):
+            continue
         if k == "milestones":
             c = Milestones("index", path / k)
         elif k == "resources":

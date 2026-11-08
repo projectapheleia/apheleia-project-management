@@ -1,0 +1,125 @@
+# Eighties themes: two added to the built-in ones.
+# A theme only gives what differs from the "default" theme, or from the theme it "extends".
+type: "themes_definitions"
+data:
+  # Dark purple with neon pink and cyan
+  - name: "neon-night"
+    label: "Neon Night"
+    dark: true
+    variables:
+      band-dark: "#07011a"
+      band-mid: "#2a0a5e"
+      band-light: "#4b1396"
+      on-dark: "#ffffff"
+      accent: "#ff2d95"
+      accent-dark: "#c4146f"
+      accent-2: "#00e5ff"
+      on-accent: "#ffffff"
+      page: "#0b0221"
+      card: "#150a35"
+      ink: "#f4eaff"
+      muted: "#b79bd9"
+      title: "#00f0ff"
+      link: "#ff6ec7"
+      line: "#3b1f7a"
+      shadow: "rgba(255, 45, 149, 0.3)"
+      zebra: "#1a0d3f"
+      hover: "#2c1566"
+      head-a: "#1f0f4d"
+      head-b: "#180b3d"
+      row-odd: "#150a35"
+      row-line: "#2a1660"
+      filter-bg: "#1f0f4d"
+      input-bg: "#0b0221"
+      input-border: "#5b2fb0"
+      tab-bar: "#0f0630"
+      tab-hover: "rgba(255, 255, 255, 0.08)"
+      current: "#4a3b00"
+      bad: "#ff4d6d"
+      over: "#45102a"
+      # The banner is a gradient with a pattern of shapes over it
+      header-bg: >-
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='90'%3E%3Cg fill='none' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='.28'%3E%3Cpolyline points='6,76 18,62 30,76 42,62 54,76 66,62 78,76' stroke='%2300e5ff'/%3E%3Cpolygon points='122,10 140,42 104,42' stroke='%23ff2d95'/%3E%3Crect x='22' y='10' width='18' height='18' stroke='%23ffe600' transform='rotate%2820 31 19%29'/%3E%3Ccircle cx='150' cy='68' r='8' fill='%23ffe600' stroke='none'/%3E%3Ccircle cx='100' cy='70' r='5' stroke='%23b967ff'/%3E%3C/g%3E%3C/svg%3E"), linear-gradient(120deg, #1a0536 0%, #4b1396 55%, #7a1fa2 100%)
+      header-shadow: "0 4px 26px rgba(255, 45, 149, 0.65)"
+      kicker-text: "#00f0ff"
+      meta-text: "#ffa6e1"
+      toolbar-text: "#00f0ff"
+      logo-bg: "#150a35"
+      tooltip-bg: "rgba(11, 2, 33, 0.97)"
+      tooltip-text: "#f4eaff"
+      font: '"Avenir Next", "Trebuchet MS", "Segoe UI", sans-serif'
+      title-font: '"Arial Black", "Impact", "Segoe UI", sans-serif'
+    chart:
+      paper: "#150a35"
+      plot: "#1a0d3f"
+      font: "#f4eaff"
+      font_family: "Trebuchet MS, Segoe UI, sans-serif"
+      grid_x: "#2f1a6b"
+      grid_y: "#2a1660"
+      line: "#5b2fb0"
+      legend_bg: "rgba(21, 10, 53, 0.9)"
+      legend_border: "#5b2fb0"
+    # Every bar in a neon colour
+    bars: ["#ff2d95", "#00e5ff", "#ffe600", "#b967ff", "#05ffa1", "#ff9f1c", "#3a86ff", "#ff5e5b"]
+    # @theme stands for this theme's selector, so the CSS only applies to it
+    css: |
+      @theme .page-header { border-bottom: 3px solid #ff2d95; }
+      @theme .page-title { color: #fff; text-shadow: 0 0 4px #fff, 0 0 14px #ff2d95, 0 0 30px #ff2d95; }
+      @theme .page-kicker { text-shadow: 0 0 8px #00f0ff; }
+      @theme .logo-link { border: 2px solid #00f0ff; box-shadow: 0 0 14px #00f0ff; }
+      @theme .tab-button.active { border-color: #00f0ff; box-shadow: 0 0 12px #00f0ff; }
+      @theme .card { border-color: #ff2d95; box-shadow: 0 0 14px rgba(255, 45, 149, 0.4); }
+      @theme .home-link { border-color: #00f0ff; box-shadow: 0 0 8px #00f0ff; }
+
+  # Light and sunny: pastel pink and teal with deep purple
+  - name: "bayside-pastel"
+    label: "Bayside Pastel"
+    variables:
+      band-dark: "#3a0ca3"
+      band-mid: "#5a189a"
+      band-light: "#7b2cbf"
+      accent: "#e6007e"
+      accent-dark: "#a8005c"
+      accent-2: "#00b8d9"
+      page: "#fde8f6"
+      card: "#ffffff"
+      ink: "#2b1055"
+      muted: "#7a5ea8"
+      title: "#5a189a"
+      link: "#b5179e"
+      line: "#f0c6e6"
+      shadow: "rgba(90, 24, 154, 0.15)"
+      zebra: "#fdf2fb"
+      hover: "#d9f6fb"
+      head-a: "#fffafd"
+      head-b: "#fbe6f5"
+      row-line: "#f6dcef"
+      filter-bg: "#fbe6f5"
+      input-border: "#e0b3d6"
+      tab-bar: "#c9f1f8"
+      tab-hover: "rgba(255, 255, 255, 0.7)"
+      current: "#fff59d"
+      bad: "#e6007e"
+      over: "#ffd9ee"
+      header-bg: >-
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='90'%3E%3Cg fill='none' stroke-width='3' stroke-linecap='round' stroke-linejoin='round' stroke-opacity='.28'%3E%3Cpolyline points='6,76 18,62 30,76 42,62 54,76 66,62 78,76' stroke='%2300e5ff'/%3E%3Cpolygon points='122,10 140,42 104,42' stroke='%23ff2d95'/%3E%3Crect x='22' y='10' width='18' height='18' stroke='%23ffe600' transform='rotate%2820 31 19%29'/%3E%3Ccircle cx='150' cy='68' r='8' fill='%23ffe600' stroke='none'/%3E%3Ccircle cx='100' cy='70' r='5' stroke='%23b967ff'/%3E%3C/g%3E%3C/svg%3E"), linear-gradient(120deg, #ff4da6 0%, #b5179e 50%, #5a189a 100%)
+      header-shadow: "0 3px 12px rgba(90, 24, 154, 0.45)"
+      kicker-text: "#ffe600"
+      meta-text: "#ffe3f4"
+      toolbar-text: "#d9f6fb"
+      logo-bg: "#3a0ca3"
+      font: '"Avenir Next", "Trebuchet MS", "Segoe UI", sans-serif'
+      title-font: '"Arial Black", "Impact", "Segoe UI", sans-serif'
+    chart:
+      plot: "#fff7fd"
+      font: "#2b1055"
+      font_family: "Trebuchet MS, Segoe UI, sans-serif"
+      grid_x: "#f3d3ea"
+      grid_y: "#f8e2f1"
+      line: "#c79ad6"
+      legend_border: "#c79ad6"
+    bars: ["#ff4da6", "#00b8d9", "#ffb400", "#8e44ff", "#00c48c", "#ff7a00", "#3a86ff"]
+    css: |
+      @theme .page-header { border-bottom: 4px solid #ffe600; }
+      @theme .page-title { text-shadow: 3px 3px 0 #00b8d9; }
+      @theme .card { border-color: #00b8d9; }

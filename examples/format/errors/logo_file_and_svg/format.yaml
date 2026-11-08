@@ -1,0 +1,5 @@
+type: "format_definitions"
+data:
+  logo:
+    file: "logo.svg"
+    svg: "<svg xmlns='http://www.w3.org/2000/svg'></svg>"

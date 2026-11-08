@@ -1,0 +1,23 @@
+# Eighties format: a new title and banner text, a geometric logo and neon themes.
+# The built-in themes are still offered alongside the two added in themes.yaml.
+type: "format_definitions"
+data:
+  title: "Bayside Project Management"
+  kicker: "Totally Rad Planning"
+  generated: "Radically generated {stamp}"
+  theme_label: "Vibe"
+
+  # Open on the neon theme
+  default_theme: "neon-night"
+
+  # The image is embedded in the report, so the report does not need logo.svg
+  logo:
+    file: "logo.svg"
+    alt: "Bayside logo"
+    tooltip: "Bayside\nNo worries."
+    height: 56
+
+  # CSS for every theme: the title is set in heavy italic capitals
+  css: |
+    .page-title { font-style: italic; text-transform: uppercase; letter-spacing: 0.05em; }
+    .tab-button { text-transform: uppercase; letter-spacing: 0.08em; font-size: 12px; }

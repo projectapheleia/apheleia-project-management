@@ -1,0 +1,38 @@
+# Default format of the report: the text, the logo and which theme is used first.
+#
+# To change any of it, add a file of the same type anywhere in the input directory.
+# Only the keys it gives are changed. See doc/source/report/format.rst
+
+type: "format_definitions"
+data:
+  # Title of the top level page, in the banner and the browser tab
+  title: "Apheleia Project Management"
+
+  # Small heading above the title of the top level page
+  kicker: "Project Management"
+
+  # Line under the title. {stamp} is the date and time the report was made
+  generated: "Report generated {stamp}"
+
+  # Label of the theme chooser in the toolbar
+  theme_label: "Theme"
+
+  # Theme used until the viewer chooses another
+  default_theme: "default"
+
+  # Offer the themes that come with the tool. Set false to offer only themes_definitions in the input
+  builtin_themes: true
+
+  # Logo at the right of the banner. It is embedded in the page, so the report needs no other files.
+  # Give exactly one of:
+  #   file: path to a png, jpg, gif, webp or svg image, relative to this yaml file
+  #   svg:  svg markup. Being part of the page it can use the theme's CSS variables, e.g. fill="var(--accent)"
+  logo:
+    file: "logo.png"
+    alt: "Apheleia logo"
+    link: "https://github.com/projectapheleia/apheleia-project-management"
+    tooltip: "Apheleia logo\nClick to visit the project on GitHub (opens in a new tab)."
+    height: 44
+
+  # Extra CSS added to every page, after the themes. Empty by default
+  css: ""

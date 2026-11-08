@@ -73,6 +73,22 @@ overlap, an end before the start, an availability outside 0 to 100, a period wit
 periods mixed with a top level start, an empty list of periods, unexpected fields and dates that cannot be read. \
 ``make report`` in ``errors`` checks each fails in the same way as the milestone error cases.
 
+Format
+------
+
+``examples/format``
+
+Two reports of the same plan, with a format and themes of their own. See :doc:`../report/format`.
+
+``eighties`` is neon and geometric. It changes the title and logo and adds two themes to the built-in ones.
+
+``noir`` is black and white, with a silhouette logo. It replaces the built-in themes with ``Noir Light`` and ``Noir Dark``.
+
+``errors`` has one directory for each way the format can be invalid: unexpected fields, a default theme or an \
+extended theme that does not exist, themes that extend each other, a theme defined twice, a missing logo file, a logo \
+given as a file and as SVG, values that would break the style sheet, a bars setting that is not understood and \
+no themes to offer. ``make report`` in ``errors`` checks each fails in the same way as the milestone error cases.
+
 Construction Single
 -------------------
 

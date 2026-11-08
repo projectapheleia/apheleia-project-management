@@ -7,6 +7,7 @@ All Modules
 
    apheleia_project_management._charts
    apheleia_project_management._containers
+   apheleia_project_management._format
    apheleia_project_management._html
    apheleia_project_management._milestones
    apheleia_project_management._projects

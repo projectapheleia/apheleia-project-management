@@ -1,0 +1,4 @@
+type: "format_definitions"
+data:
+  builtin_themes: false
+  default_theme: "default"

@@ -1,0 +1,5 @@
+type: "themes_definitions"
+data:
+  - name: "sepia"
+    chart:
+      background: "#f4ecd8"

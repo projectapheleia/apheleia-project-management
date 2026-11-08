@@ -60,6 +60,9 @@ Files whose ``type`` is not recognised are skipped with a warning, as is an inpu
 Any of the input types may be left out. The report is still generated, and the pages for anything \
 not yet defined say so. A plan can therefore be built up a file at a time.
 
+The title, logo, colours and fonts of the report can be changed with YAML files in the input directory, \
+and the theme chooser at the top right of every page lists the themes available. See :doc:`format`.
+
 Report Structure
 ----------------
 

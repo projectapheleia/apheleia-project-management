@@ -1,0 +1,5 @@
+type: "themes_definitions"
+data:
+  - name: "sepia"
+    variables:
+      page: "#f4ecd8; } body { display: none"

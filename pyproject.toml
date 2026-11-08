@@ -72,7 +72,7 @@ fix = false
 select = ["E", "F", "B", "I", "UP", "C90"]
 
 [tool.ruff.lint.per-file-ignores]
-# Html templates, help text and the embedded logo
+# Html templates and help text
 "apheleia_project_management/_html.py" = ["E501"]
 
 [tool.ruff.lint.mccabe]

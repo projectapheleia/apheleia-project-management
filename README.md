@@ -56,6 +56,28 @@ data:
 
 See [the documentation](https://github.com/projectapheleia/apheleia-project-management/blob/main/doc/source/inputs/inputs.rst) for the full field reference.
 
+### Customising the report
+
+The title, the logo in the banner, and the colours, fonts and chart colours of the themes are all defined in YAML, \
+in `format_definitions` and `themes_definitions` files in the input directory. Add your own themes to the \
+built-in ones, or replace them.
+
+```yaml
+type: "format_definitions"
+data:
+  title: "Acme Project Management"
+  default_theme: "sepia"
+  logo:
+    file: "acme.png"
+```
+
+| | |
+| --- | --- |
+| ![Eighties format](https://raw.githubusercontent.com/projectapheleia/apheleia-project-management/main/doc/source/images/format_eighties.png) | ![Noir format](https://raw.githubusercontent.com/projectapheleia/apheleia-project-management/main/doc/source/images/format_noir.png) |
+
+The [format examples](https://github.com/projectapheleia/apheleia-project-management/tree/main/examples/format) show a neon, geometric eighties format with added themes, and a film noir format with the built-in themes replaced by `Noir Light` and `Noir Dark`. \
+See [the documentation](https://github.com/projectapheleia/apheleia-project-management/blob/main/doc/source/report/format.rst) for every setting.
+
 ### Generating a report
 
 ```sh

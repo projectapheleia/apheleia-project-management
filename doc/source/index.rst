@@ -21,6 +21,7 @@ Apheleia Project Management Documentation
    inputs/workpackages
    inputs/tasks
    report/report
+   report/format
    examples/examples
    modules/all_modules
 

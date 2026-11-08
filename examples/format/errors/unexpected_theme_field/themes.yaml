@@ -1,0 +1,5 @@
+type: "themes_definitions"
+data:
+  - name: "sepia"
+    colours:
+      page: "#f4ecd8"

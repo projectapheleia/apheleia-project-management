@@ -1,0 +1,41 @@
+# Film noir format: new title and text, a silhouette logo and just two themes, noir-light and noir-dark.
+# builtin_themes is false, so the built-in Default, Monochrome and Dark themes are not offered.
+type: "format_definitions"
+data:
+  title: "The Project Files"
+  kicker: "Strictly Confidential"
+  generated: "Filed {stamp}"
+  theme_label: "Lighting"
+
+  builtin_themes: false
+  default_theme: "noir-dark"
+
+  # The logo is svg given here, so it is part of the page and can use the colours of the theme
+  # that is showing: --logo-ink and --logo-ember are variables the themes in themes.yaml define
+  logo:
+    height: 64
+    alt: "A man in a fedora, smoking"
+    tooltip: "Round up the usual suspects."
+    svg: |
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 100" role="img">
+        <!-- Smoke -->
+        <g fill="none" stroke="var(--logo-ink)" stroke-width="2" stroke-linecap="round" opacity="0.55">
+          <path d="M98 54 C104 46 91 40 98 31 C104 24 94 18 100 9"/>
+          <path d="M108 56 C113 50 104 45 109 38"/>
+        </g>
+        <!-- Hat: crown, brim and band -->
+        <path d="M30 36 C30 16 36 9 45 7 Q52 13 59 7 C68 9 74 16 74 36 Z" fill="var(--logo-ink)"/>
+        <ellipse cx="52" cy="37" rx="34" ry="6.5" fill="var(--logo-ink)"/>
+        <path d="M31 30 H73" stroke="var(--logo-bg)" stroke-width="3.5"/>
+        <!-- Head in profile, neck and shoulders in a coat with the collar turned up -->
+        <path fill="var(--logo-ink)" d="M40 42 H68 L71 49 L77 57 L71 59.5 L73 62.5 L71 66 L73 69 L67 75 L63 78 V84 L96 93 V100 H6 V93 L40 84 Z"/>
+        <path d="M63 80 L50 98 M40 85 L52 100" stroke="var(--logo-bg)" stroke-width="2" fill="none"/>
+        <!-- Cigarette and ember -->
+        <rect x="72" y="62" width="23" height="2.8" rx="1" fill="var(--logo-ink)" stroke="var(--logo-bg)" stroke-width="0.6" transform="rotate(-9 72 63)"/>
+        <circle cx="95.5" cy="59.5" r="2.2" fill="var(--logo-ember)"/>
+      </svg>
+
+  # CSS for both themes: the line under the title is set in typewriter type
+  css: |
+    .page-meta, .page-kicker { font-family: "Courier New", Courier, monospace; }
+    .page-title { text-transform: uppercase; letter-spacing: 0.14em; font-weight: 500; }

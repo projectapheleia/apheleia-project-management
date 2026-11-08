@@ -1,0 +1,172 @@
+# Built-in themes of the report.
+#
+# Each theme is a set of CSS variables (the colours and fonts of the page), the colours of the charts
+# and, optionally, how the bars of the charts are coloured. A theme can also add its own CSS.
+#
+# Add your own with a file of the same type anywhere in the input directory. See doc/source/report/format.rst
+#
+# The theme called "default" is also the base of every other theme: anything a theme does not set
+# is taken from it, or from the theme it names in "extends". This is always this built-in default theme,
+# even if the input replaces "default" with a theme of its own.
+
+type: "themes_definitions"
+data:
+  - name: "default"
+    label: "Default"
+    variables:
+      # Dark bands: the toolbar, the table headings and the main tiles
+      band-dark: "#0f1d33"
+      band-mid: "#16294a"
+      band-light: "#1f3a66"
+      on-dark: "#ffffff"          # text on the dark bands
+      # Accent: links, the current tab, badges
+      accent: "#2f6fed"
+      accent-dark: "#1d4fb8"
+      accent-2: "#6f9bff"
+      on-accent: "#ffffff"        # text on the accent colour
+      # Page and cards
+      page: "#eef1f7"
+      card: "#ffffff"
+      ink: "#1c2433"              # body text
+      muted: "#5d6b82"
+      title: "#16294a"
+      link: "#1d4fb8"
+      line: "#dde3ee"
+      shadow: "rgba(15, 29, 51, 0.08)"
+      # Tables
+      zebra: "#f3f6fc"
+      hover: "#e3edff"
+      head-a: "#fbfcff"
+      head-b: "#eef2fa"
+      row-odd: "#ffffff"
+      row-line: "#e9edf5"
+      filter-bg: "#e8edf7"
+      input-bg: "#ffffff"
+      input-border: "#c6d0e3"
+      # Tabs
+      tab-bar: "#e4e9f3"
+      tab-hover: "rgba(255, 255, 255, 0.65)"
+      # Highlights
+      current: "#fff3c4"          # the current milestone
+      bad: "#d62839"              # overruns and missing estimates
+      on-bad: "#ffffff"
+      over: "#fde6e9"
+      # Banner at the top of the page
+      header-bg: "linear-gradient(120deg, #0f1d33 0%, #1f3a66 100%)"
+      header-shadow: "0 2px 8px rgba(15, 29, 51, 0.35)"
+      kicker-text: "#9fb7e6"
+      meta-text: "#b9c8e6"
+      # Toolbar
+      toolbar-text: "#c9d6f2"
+      # Logo
+      logo-bg: "#ffffff"
+      logo-filter: "none"
+      # Hover tips
+      tooltip-bg: "rgba(15, 29, 51, 0.96)"
+      tooltip-text: "#f1f5ff"
+      # Fonts
+      font: '"Segoe UI", Inter, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif'
+      title-font: '"Segoe UI", Inter, -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif'
+    # The charts are drawn in these colours (see _charts.py), and restyled in the browser for any theme that differs
+    chart:
+      paper: "#ffffff"
+      plot: "#f6f8fc"
+      font: "#1c2433"
+      font_family: "Segoe UI, Inter, -apple-system, Helvetica Neue, Arial, sans-serif"
+      grid_x: "#dfe5f0"
+      grid_y: "#e8ecf4"
+      line: "#b7c2d6"
+      legend_bg: "rgba(255,255,255,0.9)"
+      legend_border: "#b7c2d6"
+
+  - name: "monochrome"
+    label: "Monochrome"
+    variables:
+      band-dark: "#151515"
+      band-mid: "#2a2a2a"
+      band-light: "#404040"
+      accent: "#444444"
+      accent-dark: "#1f1f1f"
+      accent-2: "#8a8a8a"
+      page: "#ebebeb"
+      ink: "#111111"
+      muted: "#666666"
+      title: "#222222"
+      link: "#222222"
+      line: "#d2d2d2"
+      shadow: "rgba(0, 0, 0, 0.1)"
+      zebra: "#f3f3f3"
+      hover: "#e2e2e2"
+      head-a: "#fafafa"
+      head-b: "#ececec"
+      row-line: "#e6e6e6"
+      filter-bg: "#e8e8e8"
+      input-border: "#b8b8b8"
+      tab-bar: "#dedede"
+      tab-hover: "rgba(255, 255, 255, 0.7)"
+      current: "#d6d6d6"
+      bad: "#111111"
+      over: "#cfcfcf"
+      header-bg: "linear-gradient(120deg, #151515 0%, #404040 100%)"
+      kicker-text: "#bdbdbd"
+      meta-text: "#cfcfcf"
+      toolbar-text: "#dddddd"
+      logo-filter: "grayscale(1)"
+      tooltip-bg: "rgba(20, 20, 20, 0.96)"
+      tooltip-text: "#f4f4f4"
+    chart:
+      plot: "#f3f3f3"
+      font: "#111111"
+      grid_x: "#dcdcdc"
+      grid_y: "#e4e4e4"
+      line: "#999999"
+      legend_border: "#999999"
+    # Spread the bars over a grey ramp, stepping by the golden ratio so neighbours differ
+    bars:
+      ramp:
+        hue: 0
+        saturation: 0
+        lightness: [22, 80]
+
+  - name: "dark"
+    label: "Dark"
+    dark: true
+    variables:
+      band-dark: "#090f1b"
+      band-mid: "#142340"
+      band-light: "#22386a"
+      accent: "#4a82ff"
+      accent-dark: "#3566d6"
+      accent-2: "#7fa8ff"
+      page: "#0d131f"
+      card: "#151c2a"
+      ink: "#e3e8f3"
+      muted: "#93a0b8"
+      title: "#cfdcf5"
+      link: "#86b3ff"
+      line: "#2a3447"
+      shadow: "rgba(0, 0, 0, 0.45)"
+      zebra: "#1b2434"
+      hover: "#26365a"
+      head-a: "#1d2738"
+      head-b: "#182131"
+      row-odd: "#151c2a"
+      row-line: "#222c3e"
+      filter-bg: "#1f2a3d"
+      input-bg: "#0f1522"
+      input-border: "#36445d"
+      tab-bar: "#101725"
+      tab-hover: "rgba(255, 255, 255, 0.07)"
+      current: "#3b3512"
+      bad: "#ff6b7a"
+      over: "#3d1c24"
+      header-bg: "linear-gradient(120deg, #090f1b 0%, #22386a 100%)"
+    chart:
+      paper: "#151c2a"
+      plot: "#1b2434"
+      font: "#e3e8f3"
+      grid_x: "#2d394e"
+      grid_y: "#273246"
+      line: "#42506a"
+      legend_bg: "rgba(21,28,42,0.9)"
+      legend_border: "#42506a"
