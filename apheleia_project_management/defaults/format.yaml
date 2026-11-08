@@ -30,8 +30,8 @@ data:
   logo:
     file: "logo.png"
     alt: "Apheleia logo"
-    link: "https://github.com/projectapheleia/apheleia-project-management"
-    tooltip: "Apheleia logo\nClick to visit the project on GitHub (opens in a new tab)."
+    link: "https://apheleia-project-management.readthedocs.io/en/stable/index.html"
+    tooltip: "Apheleia logo\nClick to visit the project documentation (opens in a new tab)."
     height: 44
 
   # Unit of task effort (estimate, spent and remaining) given as a plain number, e.g. "spent: 3".
