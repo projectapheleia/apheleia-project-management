@@ -4,6 +4,7 @@ import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
 
+from ._burn import add_burnchart, workpackage_allocation
 from ._charts import INK, SCALES, aggregate_by_period, color_map, gantt, stacked_bar
 from ._containers import Container, containers
 from ._tasks import (
@@ -17,7 +18,7 @@ from ._tasks import (
     task_summary_stats,
     task_summary_table,
 )
-from ._utils import DAYS_PER_MONTH, format_months, parse_effort, smart_date_converter, today
+from ._utils import DAYS_PER_MONTH, format_months, parse_effort, smart_date_converter, today_markers
 
 OUTSIDE = '<span class="badge badge-missing">OUTSIDE MILESTONE</span>'
 """ Shown against a workpackage whose dates do not fall within its milestone """
@@ -83,82 +84,87 @@ class Workpackage(Container):
         """
         wp_start = self.summary_df['start'].min()
         wp_end = self.summary_df['end'].max()
+        checked = check_milestones(self.summary_df)
 
-        # Add Timeline to html
-        tab = self.html.add_tab("Timelines")
-        tab.add_chart("Workpackage Timelines", gantt(
-                                                        check_milestones(self.summary_df),
+        # Find all tasks relating to this workpackage
+        tasks_df = None
+        index = containers.get("tasks", {}).get("index")
+        if index is not None and index.imported_df is not None and "workpackage" in index.imported_df.columns:
+            tasks_df = index.imported_df[index.imported_df["workpackage"] == self.name]
+            if tasks_df.empty:
+                tasks_df = None
+
+        # Summary: description, checks against the milestone, estimate and allocation, and the progress of the tasks
+        tab = self.html.add_tab("Summary")
+        description = self.summary_df["description"].dropna()
+        tab.add_paragraph("Description", description.iloc[0] if len(description) else "No description has been provided for this workpackage.",
+                          help="Description of the workpackage, as given in the workpackages input file.")
+
+        if checked["milestone"].notna().any():
+            tab.add_table("Milestone", checked[["workpackage", "milestone", "milestone range", "milestone check"]]
+                          .rename(columns={"milestone check" : "check"}), help=MILESTONE_HELP)
+
+        if self.summary_df["estimate"].notna().any():
+            tab.add_table("Estimate", check_estimates(self.summary_df)[["workpackage", "estimate", "allocated", "estimate check"]]
+                          .rename(columns={"estimate check" : "check"}), help=ESTIMATE_HELP, units=True)
+
+        if tasks_df is not None:
+            tab.add_table("Task Effort", task_effort_table(self.summary_df), help=TASK_EFFORT_HELP, units=True)
+            tab.add_summary("Task Progress Summary", task_summary_stats(tasks_df),
+                            help="Overall progress of every task in this workpackage. Overall progress is the effort spent "
+                                 "as a percentage of effort spent plus remaining. Forecast finish is the latest forecast "
+                                 "completion of any task.")
+            add_over_estimate(tab, tasks_df)
+        else:
+            tab.add_paragraph("Tasks", "No tasks have been recorded for this workpackage.")
+
+        # Timeline of the workpackage and its tasks
+        tab = self.html.add_tab("Timeline")
+        tab.add_chart("Workpackage Timeline", gantt(
+                                                        checked,
                                                         "",
                                                         ("start", "Start Date"),
                                                         ("end", "End Date"),
                                                         ("workpackage", "Workpackage Name"),
-                                                        markers={"Today" : today},
+                                                        markers=today_markers(),
                                                         description="description",
                                                         link_key="workpackage",
                                                         milestones=("milestone", "milestone date"),
                                                     )
         )
-
-        # Milestone
-        checked = check_milestones(self.summary_df)
-        if checked["milestone"].notna().any():
-            tab.add_table("Milestone", checked[["workpackage", "milestone", "milestone range", "milestone check"]]
-                          .rename(columns={"milestone check" : "check"}), help=MILESTONE_HELP)
-
-        # Estimate
-        if self.summary_df["estimate"].notna().any():
-            tab.add_table("Estimate", check_estimates(self.summary_df)[["workpackage", "estimate", "allocated", "estimate check"]]
-                          .rename(columns={"estimate check" : "check"}), help=ESTIMATE_HELP, units=True)
-
-        # Add Resource allocation stacked bar to html
-        tab = self.html.add_tab("Allocations")
-        tab.add_chart("Workpackage Allocations", create_allocation_chart(self.imported_df, "allocations.resource"))
-
-        # Tasks
-        # Find all tasks relating to this workpackage
-        tasks = []
-        for v in containers.get("tasks", {}).values():
-            if v.imported_df is not None and "workpackage" in v.imported_df.columns and \
-               not v.imported_df[v.imported_df["workpackage"] == self.name].empty:
-                tasks.append(v)
-
-        if len(tasks) != 0:
-            tasks_df = pd.concat([v.imported_df for v in tasks], ignore_index=True)
-            tasks_df = tasks_df[tasks_df["workpackage"] == self.name]
-
-            tab = self.html.add_tab("Tasks")
-
-            # Task effort against the workpackage
-            tab.add_table("Task Effort", task_effort_table(self.summary_df), help=TASK_EFFORT_HELP, units=True)
-
-            # Overall summary
-            tab.add_summary("Task Progress Summary", task_summary_stats(tasks_df),
-                            help="Overall progress of every task in this workpackage. Overall progress is the effort spent "
-                                 "as a percentage of effort spent plus remaining. Forecast finish is the latest forecast "
-                                 "completion of any task.")
-
-            # Progress of each task
-            tab.add_chart("Progress by Task", create_task_progress_by_task(tasks_df),
-                          help="One bar per task in this workpackage. The first part is effort spent, the rest is effort "
-                               "remaining (days), so the full length is the current estimate for the task. "
-                               "Blue is effort within the original estimate (the black line), red is effort past it, so a late task ends in red. "
-                               "Click a bar to open the task page.")
-
-            # Timeline
+        if tasks_df is not None:
             tab.add_chart("Task Timeline", create_task_timeline(tasks_df,
                                                                 markers={
-                                                                            "Today" : today,
+                                                                            **today_markers(),
                                                                             "Workpackage Start" : wp_start,
                                                                             "Workpackage End" : wp_end,
                                                                         }
                                                                 )
                         )
 
-            # Summary Table
+        # Burndown and burnup of the tasks, forecast at the rate the workpackage is allocated
+        tab = self.html.add_tab("Burnchart")
+        deadline = None
+        due = checked.dropna(subset=["milestone date"]) if "milestone date" in checked.columns else checked.iloc[0:0]
+        if not due.empty:
+            deadline = (f"Milestone {due['milestone'].iloc[0]}", due["milestone date"].iloc[0])
+        add_burnchart(tab, tasks_df, {self.name : workpackage_allocation([self.name])}, "workpackage", deadline=deadline)
+
+        # Add Resource allocation stacked bar to html
+        tab = self.html.add_tab("Allocations")
+        tab.add_chart("Workpackage Allocations", create_allocation_chart(self.imported_df, "allocations.resource"))
+
+        # Progress of each task
+        if tasks_df is not None:
+            tab = self.html.add_tab("Tasks")
+            tab.add_chart("Progress by Task", create_task_progress_by_task(tasks_df),
+                          help="One bar per task in this workpackage. The first part is effort spent, the rest is effort "
+                               "remaining (days), so the full length is the current estimate for the task. "
+                               "Blue is effort within the original estimate (the black line), red is effort past it, so a late task ends in red. "
+                               "Click a bar to open the task page.")
             tab.add_table("Tasks", task_summary_table(tasks_df), units=True,
                           help="Progress of every task in this workpackage. Remaining of 0 means the task is complete. "
                                + TASK_ESTIMATE_HELP)
-            add_over_estimate(tab, tasks_df)
 
         super().export_html()
 
@@ -268,7 +274,7 @@ class WorkPackages(Container):
                                                         ("start", "Start Date"),
                                                         ("end", "End Date"),
                                                         ("workpackage", "Workpackage Name"),
-                                                        markers={"Today" : today},
+                                                        markers=today_markers(),
                                                         description="description",
                                                         link_key="workpackage",
                                                         milestones=("milestone", "milestone date"),

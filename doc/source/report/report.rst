@@ -12,7 +12,7 @@ To generate a report, run the script with the following command:
 
 .. code-block:: shell
 
-    $ apheleia_project_report --input <input directory> --html <output directory>
+    $ apheleia_project_report --input <input directory> --html <output directory> [--today YYYY-MM-DD|None]
 
 .. list-table::
    :header-rows: 1
@@ -27,8 +27,34 @@ To generate a report, run the script with the following command:
    * - ``--html``
      - ``./html``
      - Directory the report is written to. It is created if it does not exist
+   * - ``--today``
+     - the day it is run
+     - The report date: the day the report is made for, as ``YYYY-MM-DD``, or ``None`` for a report with no date. \
+       See `Report date`_
 
 Open ``index.html`` in the output directory in a browser to view the report.
+
+Report date
+-----------
+
+Some of the report depends on what day it is: today is marked on the charts, unfinished tasks are forecast from \
+today if their latest status update is older, tasks are ``STALE`` when they have not been updated for a while, \
+the current milestone is the next one due, and each resource's availability is shown for today. By default \
+today is the day the report is run, so the same plan gives a different report on a different day.
+
+``--today`` fixes the date, so the report is the same whatever day it is made, e.g. ``--today 2026-11-09``. \
+Every example sets it in its ``Makefile``.
+
+``--today None`` makes a report with no date, which relies only on the data:
+
+- Nothing is marked as today on the charts
+- Forecasts start from each task's latest status update, however long ago that was, and the burncharts from the \
+  latest update of their tasks
+- Stale tasks, the current milestone and availability are checked against the latest status update in the input, \
+  instead of today. The *available today* column of the resources is called *available at latest update*
+
+The line under the title of every page gives the report date, or says there is none and gives the latest status \
+update. A date that cannot be read, e.g. ``--today 2026-02-30``, is reported as an error.
 
 .. image:: /images/report_overview.png
    :align: center
@@ -105,6 +131,44 @@ Hovering over the information badge next to a chart or table title gives a descr
 
 Charts with a time axis can be switched between monthly, quarterly and yearly scale.
 
+Every project, workpackage and task page starts with the same three tabs:
+
+- **Summary** - the status of the item and the checks that apply to it
+- **Timeline** - when it runs, with today (if the report has a date) and its milestones marked
+- **Burnchart** - a burndown and a burnup of its tasks, and when the remaining effort is forecast to be done
+
+Burncharts
+----------
+
+The burnchart tab adds up the effort spent and remaining of the tasks from their status updates. The **burndown** \
+shows the effort remaining over time; the **burnup** shows the effort spent against the total effort (spent + \
+remaining), so a rising total shows work being added or re-estimated. A task counts from its first status update, \
+so to see the whole plan from the start, give each task a first update with nothing spent at the start of the project.
+
+While work remains, the dashed lines forecast it from the latest status update, or today if that is later and the \
+report has a date (see `Report date`_), at the rate the resources are allocated:
+
+- An allocation of 1.0 does one day of effort every working day, so the forecast is a straight line through each \
+  period of allocation, and flat where nothing is allocated
+- Each workpackage is forecast with its own allocation, so people allocated to one workpackage never do the work \
+  of another. A project's forecast adds up those of its workpackages, and ends when the last of them does
+- A task is forecast with an equal share of its resources' allocation to its workpackage, shared with their other \
+  unfinished tasks in that workpackage
+- The **estimated end** is the working day the allocated effort first covers the effort remaining. If the \
+  allocation runs out first, the forecast carries on at the average allocated rate and the end is marked \
+  *beyond allocation*. If work remains in a workpackage with no allocation left, the end shows *No allocation*
+
+The Burn Summary above the charts gives the estimated end date, progress, effort spent and remaining, when the \
+allocation ends, the latest update and, if there is one, the date the work should be done by: the project end for a \
+project and the milestone for a workpackage. The estimated end is highlighted when it is beyond the allocation or \
+after that date.
+
+.. image:: /images/project_burndown.png
+   :align: center
+
+.. image:: /images/project_burnup.png
+   :align: center
+
 Pages
 -----
 
@@ -115,7 +179,7 @@ Projects
 - **Project** - a summary of the status of its tasks grouped by the milestone they are needed for, the \
   tasks that are over their estimate or stale, the workpackages outside their milestone, over their estimate or \
   whose tasks need more than they are allocated, and the months its resources are over allocated; the \
-  project timeline with its milestones marked; the timeline and \
+  project timeline with its milestones marked; its burndown and burnup with the forecast end date; the timeline and \
   resource allocation of its workpackages; and its definition
 
 .. image:: /images/project_timeline.png
@@ -126,8 +190,9 @@ Workpackages
 
 - **Overview** - timeline of all workpackages, the effort allocated to each over time, a summary table, and \
   the effort of their tasks against their allocation and estimate
-- **Workpackage** - workpackage timeline, effort allocated by resource, and the effort, progress, timeline and \
-  forecast completion of its tasks, with those over their estimate or stale
+- **Workpackage** - its milestone, estimate and task effort checks and the progress of its tasks, with those over \
+  their estimate or stale; the timeline of the workpackage and its tasks; its burndown and burnup with the forecast \
+  end date; effort allocated by resource; and the progress of each task
 
 .. image:: /images/workpackage_timeline.png
    :align: center
@@ -162,8 +227,8 @@ Tasks
 
 - **Overview** - timeline of all tasks, a summary table, the tasks over their estimate, the stale tasks and \
   overall progress
-- **Task** - task timeline, its latest status, whether it is within its estimate and how long ago it was \
-  updated, and its progress over time
+- **Task** - its latest status, whether it is within its estimate and how long ago it was updated; the task \
+  timeline; and its burndown and burnup with the forecast end date
 
 .. image:: /images/task_summary.png
    :align: center
@@ -179,7 +244,7 @@ Milestones
   whether it has passed, is current or is upcoming, and the milestone's definition. See \
   :doc:`../inputs/milestones` for how milestones are dated
 
-All timelines mark today's date. On the charts allocations are shown in person-months and task effort in days. \
+All timelines mark today's date, unless the report has no date. On the charts allocations are shown in person-months and task effort in days. \
 Tables of effort have a *Units* select box to show it in man-years, man-months, man-weeks or man-days. See :doc:`workpackages <../inputs/workpackages>` and :doc:`tasks <../inputs/tasks>` for how these are calculated.
 
 Using in a Makefile

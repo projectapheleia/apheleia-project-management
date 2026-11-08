@@ -8,6 +8,9 @@ data:
   start: '2026-02-02'
   estimate: 60
   status:
+  - date: '2026-01-05'
+    spent: 0
+    remaining: 60
   - date: '2026-02-02'
     spent: 0
     remaining: 60
@@ -25,6 +28,9 @@ data:
   start: '2026-06-01'
   estimate: 62
   status:
+  - date: '2026-01-05'
+    spent: 0
+    remaining: 62
   - date: '2026-06-01'
     spent: 0
     remaining: 70
@@ -42,6 +48,9 @@ data:
   start: '2026-08-03'
   estimate: 35
   status:
+  - date: '2026-01-05'
+    spent: 0
+    remaining: 35
   - date: '2026-08-03'
     spent: 0
     remaining: 35

@@ -7,7 +7,8 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 from . import _format
-from ._charts import BAR_WIDTH, EFFORT_COLORS, INK, SCALES, _shade_bars, aggregate_by_period, gantt, stacked_bar, style_axes
+from ._burn import add_burnchart, task_allocation
+from ._charts import BAR_WIDTH, EFFORT_COLORS, INK, _shade_bars, gantt, style_axes
 from ._containers import Container, containers
 from ._utils import (
     DAYS_PER_MONTH,
@@ -15,6 +16,8 @@ from ._utils import (
     milestone_badges,
     milestone_dates_text,
     parse_effort,
+    reference_date,
+    reference_text,
     smart_date_converter,
     today,
 )
@@ -41,9 +44,10 @@ class Task(Container):
         :return: None
         """
         tab = self.html.add_tab("Summary")
-
-        # Timeline
-        tab.add_chart("Task Timeline", create_task_timeline(self.imported_df))
+        tab.add_summary("Task Progress Summary", task_summary_stats(self.imported_df),
+                        help="Overall progress of this task. Progress is the effort spent as a percentage of effort "
+                             "spent plus remaining. Forecast finish is the forecast completion date, assuming one day of "
+                             "effort every working day.")
 
         # Summary Table
         tab.add_table("Latest Status", task_summary_table(self.imported_df), units=True,
@@ -51,16 +55,13 @@ class Task(Container):
                            "milestone if none was given. MISSING means no estimate was provided. Variance is spent plus "
                            "remaining minus the estimate. Remaining of 0 means the task is complete. " + TASK_ESTIMATE_HELP)
 
-        # Progress
-        tab = self.html.add_tab("Progress")
-        tab.add_summary("Task Progress Summary", task_summary_stats(self.imported_df),
-                        help="Overall progress of this task. Progress is the effort spent as a percentage of effort "
-                             "spent plus remaining. Forecast finish is the forecast completion date.")
-        tab.add_chart("Task Progress", create_task_progress(self.imported_df, "task",
-                                                            link_to=("workpackage", str(self.imported_df["workpackage"].iloc[0]))),
-                      help="History of the task. Each bar is the effort spent plus the effort remaining at that date, so "
-                           "the total height is the current estimate to complete. Click a bar to open the workpackage "
-                           "the task belongs to.")
+        # Timeline
+        tab = self.html.add_tab("Timeline")
+        tab.add_chart("Task Timeline", create_task_timeline(self.imported_df))
+
+        # Burndown and burnup, forecast at the share of its resources' allocation the task gets
+        tab = self.html.add_tab("Burnchart")
+        add_burnchart(tab, self.imported_df, {self.imported_df["workpackage"].iloc[0] : task_allocation(self.imported_df)}, "task")
 
         super().export_html()
 
@@ -216,10 +217,11 @@ def create_task_timeline(df: pd.DataFrame, markers=None) -> px.timeline:
     df = info.merge(df.reindex(columns=["task", "description"]).groupby("task", as_index=False).first(), on="task")
     df = df.rename(columns={"last_status" : "last_status_date", "remaining" : "remaining_days"})
 
-    # 2. If task isn't complete and today is > last status update the last status date
+    # 2. If the task isn't complete and today (if the report has a date) is after the last status update, start from today
+    now = today()
     df["last_status_date"] = np.where(
-                                        df["remaining_days"] != 0,
-                                        df["last_status_date"].clip(lower=today),
+                                        (df["remaining_days"] != 0) & (now is not None),
+                                        df["last_status_date"].clip(lower=now),
                                         df["last_status_date"]
     )
 
@@ -260,68 +262,6 @@ def create_task_timeline(df: pd.DataFrame, markers=None) -> px.timeline:
                                         )
 
     return fig
-
-def create_task_progress(df : pd.DataFrame, groupby : str, link_to : tuple=None) -> px.bar:
-    """
-    Create a stacked bar for allocations
-
-    :param df: Dataframe to create chart from
-    :type df: pd.DataFrame
-    :param groupby: Column to group by
-    :type groupby: str
-    :param link_to: Optional (container type, name). Clicking a bar opens that container's page
-    :type link_to: tuple
-    :return: px.bar
-    :rtype: px.bar
-    """
-
-    # 1. Calculate boundaries
-    start_date = df['status.date'].min() - pd.DateOffset(weeks=2)
-    end_date = df['status.date'].max() + pd.DateOffset(weeks=2)
-
-    # 2. Create the full weekly range
-    full_range = pd.date_range(start=start_date, end=end_date, freq='W-MON')
-
-    # 3. Pivot and Align
-    pivot_df = df.groupby(['status.date', groupby])[['status.spent', 'status.remaining']].sum().unstack(groupby)
-
-    # 4. Reindex to the expanded range and Forward Fill
-    # This adds the 2 weeks before and 2 weeks after
-    combined_index = pivot_df.index.union(full_range).sort_values()
-    expanded_df = pivot_df.reindex(combined_index)
-    normalized_df = expanded_df.ffill().reindex(full_range).fillna(0)
-
-    # 5. Collapse and Melt for the chart
-    project_totals = normalized_df.T.groupby(level=0).sum().T.reset_index()
-    df_melted = project_totals.melt(
-                                    id_vars=["index"],
-                                    value_vars=["status.spent", "status.remaining"],
-                                    var_name="Type",
-                                    value_name="Effort"
-    )
-
-    # 6. Create a chart per time scale. Spent and remaining are levels, so each period shows its last value
-    names = {"status.spent" : "Spent", "status.remaining" : "Remaining"}
-    df_melted["Type"] = df_melted["Type"].map(names)
-    colors = {n : EFFORT_COLORS[n] for n in names.values()}
-    figs = {}
-    for scale, (_, x_label, tick_format, hover_format) in SCALES.items():
-        figs[scale] = stacked_bar(
-                            aggregate_by_period(df_melted, "index", ["Type"], "Effort", scale, "last"),
-                            "",
-                            ("index", x_label),
-                            ("Effort", "Effort (Days)"),
-                            "Type",
-                            height=1000,
-                            bar_width={"Monthly" : 50, "Quarterly" : 80, "Yearly" : 120}[scale],
-                            tickformat=tick_format,
-                            hover_date_format=hover_format,
-                            colors=colors,
-                            descriptions={k : f"Click to open {link_to[0]} {link_to[1]}" for k in colors} if link_to else None,
-                            link_to=link_to,
-                        )
-
-    return figs
 
 def parse_task(definition : dict, known : set) -> dict:
     """
@@ -441,7 +381,49 @@ def project_milestones(project : str) -> pd.DataFrame:
     ms = ms[["milestone", "date", "start"]]
     return ms.dropna(subset=["date"]).sort_values("date").reset_index(drop=True)
 
+_TASK_INFO_CACHE = {}
+""" task_info of every task, keyed by the data it was computed from and the settings it depends on. It lives only as
+long as the process: nothing is saved between reports """
+
 def task_info(df : pd.DataFrame) -> pd.DataFrame:
+    """
+    One row per task with its resolved start date, estimate and latest progress. See _task_info.
+
+    Each task's row depends only on its own status updates and its project, so the rows of every task are worked out
+    once, from all the status updates, and the rows of the tasks in df picked out. The rows are worked out again if the
+    status updates, the projects, the report date or stale_days are replaced. If df does not hold every status update
+    of its tasks, e.g. only those up to a date, or holds tasks that are not loaded, its rows are worked out from df
+    itself. Data changed in place, rather than replaced, is not noticed.
+
+    :param df: Dataframe of task status updates
+    :type df: pd.DataFrame
+    :return: One row per task, in task order
+    :rtype: pd.DataFrame
+    """
+
+    index = containers.get("tasks", {}).get("index")
+    every = index.imported_df if index is not None else None
+    if every is None or every.empty or df.empty:
+        return _task_info(df)
+
+    # The data is kept with the key, so the ids in it cannot be reused by other data while it is cached
+    projects = [p.imported_df for p in containers.get("project", {}).values()]
+    key = (id(every), len(every), tuple(id(p) for p in projects), reference_date(), today(), _format.active().stale_days)
+    if _TASK_INFO_CACHE.get("key") != key:
+        _TASK_INFO_CACHE.clear()
+        _TASK_INFO_CACHE.update(key=key, info=_task_info(every), counts=every.groupby("task").size(),
+                                data=(every, projects))
+
+    # Every status update of each task must be in df, or the cached rows would not match it
+    names = df["task"].unique()
+    expected = _TASK_INFO_CACHE["counts"].reindex(names)
+    if expected.isna().any() or expected.sum() != len(df):
+        return _task_info(df)
+
+    info = _TASK_INFO_CACHE["info"]
+    return info[info["task"].isin(names)].reset_index(drop=True).copy()
+
+def _task_info(df : pd.DataFrame) -> pd.DataFrame:
     """
     One row per task with its resolved start date, estimate and latest progress.
 
@@ -507,8 +489,10 @@ def task_info(df : pd.DataFrame) -> pd.DataFrame:
     g["start"] = starts
     g["start_note"] = notes
 
-    # Forecast completion: latest status (not before today, or the start date, if unfinished) plus remaining working days
-    base = pd.Series(np.where(g["remaining"] != 0, g["last_status"].clip(lower=today), g["last_status"]), index=g.index)
+    # Forecast completion: latest status (not before today, if the report has a date, or the start date, if unfinished)
+    # plus remaining working days
+    now = today()
+    base = pd.Series(np.where(g["remaining"] != 0, g["last_status"].clip(lower=now), g["last_status"]), index=g.index)
     base = pd.Series(np.where(g["remaining"] != 0, np.maximum(base, g["start"]), base), index=g.index)
     g["forecast_end"] = [b + pd.offsets.BusinessDay(n=int(np.ceil(r))) for b, r in zip(base, g["remaining"], strict=True)]
 
@@ -520,9 +504,11 @@ def task_info(df : pd.DataFrame) -> pd.DataFrame:
     g["over_by"] = np.where(g["has_estimate"], g["total"] - g["estimate"], 0.0)
     g["over"] = g["has_estimate"] & (g["over_by"] > 0)
 
-    # Stale: unfinished, and the latest update is more than stale_days before today
+    # Stale: unfinished, and the latest update is more than stale_days before the reference date (today, or the latest
+    # update in the input if the report has no date)
     limit = _format.active().stale_days
-    g["days_since_update"] = (today - g["last_status"]).dt.days
+    ref = reference_date()
+    g["days_since_update"] = (ref - g["last_status"]).dt.days if ref is not None else 0
     g["stale"] = ((g["remaining"] != 0) & (g["days_since_update"] > limit)) if limit is not None else False
 
     return g
@@ -573,8 +559,8 @@ def stale_help() -> str:
     limit = _format.active().stale_days
     if limit is None:
         return "The check for stale tasks is turned off (stale_days is null in the format)."
-    return (f"An unfinished task is STALE when its latest status update is more than {limit} days before the day the report "
-            f"was made, so its spent, remaining and forecast may be out of date. Complete tasks are never stale. "
+    return (f"An unfinished task is STALE when its latest status update is more than {limit} days before "
+            f"{reference_text()}, so its spent, remaining and forecast may be out of date. Complete tasks are never stale. "
             f"The number of days is stale_days in the format.")
 
 def days_text(n : int) -> str:
@@ -597,6 +583,8 @@ def update_check(r) -> str:
         return f"{STALE} last updated {days_text(n)} ago, more than {days_text(_format.active().stale_days)}"
     if n < 0:
         return f"Latest update is dated {days_text(-n)} in the future"
+    if today() is None:
+        return "Latest update in the input" if n == 0 else f"Updated {days_text(n)} before the latest update in the input"
     return "Updated today" if n == 0 else f"Updated {days_text(n)} ago"
 
 def tasks_stale(df : pd.DataFrame) -> pd.DataFrame:
@@ -719,7 +707,7 @@ def milestone_task_summary(tasks : pd.DataFrame, milestones : pd.DataFrame=None,
     Tasks have no milestone of their own, so each task is attributed to the first milestone
     dated on or after the task's forecast completion, i.e. the milestone it is needed by.
     Tasks forecast to finish after the last milestone are listed under "After <last milestone>".
-    The current milestone is the next one due (first dated today or later).
+    The current milestone is the next one due (first dated on or after the reference date, see reference_date).
 
     :param tasks: Dataframe of task status updates
     :type tasks: pd.DataFrame
@@ -941,5 +929,4 @@ __all__ = [
     "Task",
     "Tasks",
     "create_task_timeline",
-    "create_task_progress",
 ]

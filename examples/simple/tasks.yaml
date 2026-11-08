@@ -33,6 +33,18 @@ data:
       - date: "2026-02-20"
         spent: 12
         remaining: 10
+      - date: "2026-04-01"
+        spent: 16
+        remaining: 8
+      - date: "2026-07-01"
+        spent: 20
+        remaining: 7
+      - date: "2026-09-01"
+        spent: 23
+        remaining: 6
+      - date: "2026-11-02"
+        spent: 26
+        remaining: 4
   - task: "ALU"
     project: "Project Alpha"
     workpackage: "CPU Development"
@@ -40,6 +52,9 @@ data:
     description: "RTL coding of ALU"
     start: "2026-02-01"   # No estimate provided: the report flags this as missing
     status:
+      - date: "2026-01-14"  # Planned at M0, so it counts towards the project from the start
+        spent: 0
+        remaining: 10
       - date: "2026-02-01"
         spent: 0
         remaining: 10
@@ -53,6 +68,18 @@ data:
     description: "RTL coding of the SoC interconnect"
     estimate: 15          # days. No start given: defaults to the previous milestone
     status:
+      - date: "2026-01-14"  # Planned at M0, so it counts towards the project from the start
+        spent: 0
+        remaining: 15
       - date: "2026-05-11"
         spent: 0
         remaining: 15
+      - date: "2026-07-15"
+        spent: 3
+        remaining: 12
+      - date: "2026-09-15"
+        spent: 7
+        remaining: 8
+      - date: "2026-11-02"
+        spent: 10
+        remaining: 5

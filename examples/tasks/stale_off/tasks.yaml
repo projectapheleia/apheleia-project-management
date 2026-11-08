@@ -1,5 +1,5 @@
-# Whether a task is stale depends on the day the report is made, so the tasks below become stale
-# as time passes. The comments say what they show when the report is made in November 2026.
+# Whether a task is stale depends on the report date, which the Makefile sets to 2026-11-09 with --today.
+# The comments say what they show on that date; on later dates more of the tasks are stale.
 type: "tasks_definitions"
 data:
   # Complete: never stale, however old its last update

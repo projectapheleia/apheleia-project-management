@@ -45,7 +45,7 @@ If more than one format is found they are applied in file order, and later ones 
     data:
       title: "Acme Project Management"
       kicker: "Planning"
-      generated: "Report generated {stamp}"
+      generated: "Report generated {stamp} · Report date {today}"
       default_theme: "dark"
       logo:
         file: "acme.png"
@@ -66,8 +66,9 @@ If more than one format is found they are applied in file order, and later ones 
      - ``Project Management``
      - Small heading above the title of the top level page
    * - ``generated``
-     - ``Report generated {stamp}``
-     - Line under the title of every page. ``{stamp}`` is replaced by the date and time the report was made
+     - ``Report generated {stamp} · Report date {today}``
+     - Line under the title of every page. ``{stamp}`` is replaced by the date and time the report was made, and \
+       ``{today}`` by the report date (see :doc:`report`), or ``none`` and the latest status update if it has none
    * - ``theme_label``
      - ``Theme``
      - Label of the theme chooser. The chooser is left out if there is only one theme

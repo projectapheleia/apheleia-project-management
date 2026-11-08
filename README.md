@@ -19,7 +19,7 @@ diffed and merged like any other source file.
 
 ## 📊 Features
 
-- Project timelines, with milestones and today's date marked
+- Project timelines, with milestones and today's date marked, for a report date of your choice or none
 - Task status by milestone, and tasks that have grown past their original estimate
 - Task effort in man-days, weeks, months or years, and tasks shared by several people
 - Workpackage timelines and the effort allocated to each
@@ -28,6 +28,7 @@ diffed and merged like any other source file.
 - Workpackages whose tasks need more effort than is allocated, or whose task estimates exceed its estimate
 - Stale tasks: unfinished tasks with no status update for a set number of days
 - Task timelines, progress and forecast completion dates based on effort spent and remaining
+- Burndown and burnup charts for every project, workpackage and task, with the end date forecast from the resources allocated
 - Interactive [plotly](https://plotly.com/python/) charts at monthly, quarterly or yearly scale
 - Click any name in a table or bar in a chart to navigate to its page
 - Static HTML output - no server, no database
@@ -85,11 +86,14 @@ See [the documentation](https://github.com/projectapheleia/apheleia-project-mana
 ### Generating a report
 
 ```sh
-apheleia_project_report --input <input directory> --html <output directory>
+apheleia_project_report --input <input directory> --html <output directory> [--today YYYY-MM-DD|None]
 <browser> <output directory>/index.html
 ```
 
-`--input` defaults to `.` and `--html` to `./html`.
+`--input` defaults to `.` and `--html` to `./html`. `--today` is the report date: the day today is marked, unfinished \
+tasks are forecast from and stale tasks are checked against. It defaults to the day the report is run; give a date \
+to make the same report whatever day it is run, as every example does, or `None` for a report with no date, which \
+forecasts from the latest status updates and checks against the latest update in the input.
 
 >**NOTE**:
 >The charting and table libraries are loaded from their public CDNs, so an internet connection is required to view the report.
@@ -163,6 +167,7 @@ make clean
 | [milestones](https://github.com/projectapheleia/apheleia-project-management/tree/main/examples/milestones) | Single date milestones, milestone windows and relative milestone dates, and the mistakes that are caught |
 | [workpackages](https://github.com/projectapheleia/apheleia-project-management/tree/main/examples/workpackages) | Workpackage estimates (none, generous, low and exact), task effort checked against workpackages, and the mistakes that are caught |
 | [tasks](https://github.com/projectapheleia/apheleia-project-management/tree/main/examples/tasks) | Good and bad task estimates, tasks shared by several people, effort in md, mw, mm and my, stale tasks, and the mistakes that are caught |
+| [today](https://github.com/projectapheleia/apheleia-project-management/tree/main/examples/today) | The `simple` example with no report date (`--today None`), and an invalid report date |
 | [resources](https://github.com/projectapheleia/apheleia-project-management/tree/main/examples/resources) | Availability periods: leave, part time working, people joining and leaving, over allocation, and the mistakes that are caught |
 | [format](https://github.com/projectapheleia/apheleia-project-management/tree/main/examples/format) | Two reports with their own title, logo and themes (`eighties` and `noir`), and the mistakes that are caught |
 | [construction_single](https://github.com/projectapheleia/apheleia-project-management/tree/main/examples/construction_single) | Multi-year construction project, one file per type |

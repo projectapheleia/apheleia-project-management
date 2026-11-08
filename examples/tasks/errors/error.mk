@@ -5,12 +5,14 @@
 
 HTML   ?= ./html
 REPORT ?= apheleia_project_report
+# Report date, so the report is the same whatever day it is run. None for a report with no date
+TODAY  ?= 2026-11-09
 
 .PHONY: report clean
 
 report:
 	@$(RM) -r $(HTML)
-	@out=$$($(REPORT) --input . --html $(HTML) 2>&1); status=$$?; \
+	@out=$$($(REPORT) --input . --html $(HTML) --today $(TODAY) 2>&1); status=$$?; \
 	echo "$$out"; \
 	if [ $$status -eq 0 ]; then echo "FAIL: the report succeeded but was expected to fail"; exit 1; fi; \
 	if ! echo "$$out" | grep -qF -- "ERROR :"; then echo "FAIL: exit status $$status but no ERROR line"; exit 1; fi; \

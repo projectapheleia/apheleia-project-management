@@ -5,11 +5,12 @@ from pathlib import Path
 
 import pandas as pd
 
+from ._burn import add_burnchart, workpackage_allocation
 from ._charts import gantt
 from ._containers import Container, containers
 from ._resources import add_over_allocation
 from ._tasks import TASK_ESTIMATE_HELP, add_over_estimate, milestone_task_summary
-from ._utils import milestone_badges, milestone_dates_text, smart_date_converter, today
+from ._utils import milestone_badges, milestone_dates_text, smart_date_converter, today_markers
 from ._workpackages import (
     ESTIMATE_HELP,
     MILESTONE_HELP,
@@ -136,7 +137,7 @@ class Project(Container):
 
         # Get milestones
         milestones_df = None
-        markers = {"Today" : today}
+        markers = today_markers()
         windows = {}
         if "milestones" in self.imported_df.columns:
             given = pd.json_normalize([m for m in self.imported_df["milestones"] if isinstance(m, dict)])
@@ -233,6 +234,14 @@ class Project(Container):
                           help="This project's milestones and their dates. A milestone with a start and end date is shown as "
                                "start to end, and is due on its end date. The current milestone is the next one due.")
 
+        # Burndown and burnup of the project's tasks
+        tab = self.html.add_tab("Burnchart")
+        has_tasks = project_tasks is not None and not project_tasks.empty
+        end = pd.to_datetime(df["end"].iloc[0], errors="coerce") if "end" in df.columns and len(df) else pd.NaT
+        allocations = {wp : workpackage_allocation([wp]) for wp in project_tasks["workpackage"].unique()} if has_tasks else {}
+        add_burnchart(tab, project_tasks if has_tasks else None, allocations, "project",
+                      deadline=("Project end", end) if pd.notna(end) else None)
+
         # Find all workpackages relating to this projects
         workpackages = []
         for v in containers.get("workpackage", {}).values():
@@ -250,7 +259,7 @@ class Project(Container):
                                                     ("start", "Start Date"),
                                                     ("end", "End Date"),
                                                     ("workpackage", "Workpackage Name"),
-                                                    markers={"Today" : today},
+                                                    markers=today_markers(),
                                                     description="description",
                                                     link_key="workpackage",
                                                     milestones=("milestone", "milestone date"),
@@ -329,7 +338,7 @@ class Projects(Container):
                                                         ("start", "Start Date"),
                                                         ("end", "End Date"),
                                                         ("project", "Project Name"),
-                                                        markers={"Today" : today},
+                                                        markers=today_markers(),
                                                         description="description",
                                                         link_key="project",
                                                     )

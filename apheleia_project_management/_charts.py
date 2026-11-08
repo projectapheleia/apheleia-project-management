@@ -1,8 +1,7 @@
-import copy
-
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
+import plotly.io as pio
 
 from ._utils import default_end_date
 
@@ -72,6 +71,120 @@ def color_map(names) -> dict:
 FONT = "Segoe UI, Inter, -apple-system, Helvetica Neue, Arial, sans-serif"
 """ Font used on all charts """
 
+def _merge(target : dict, changes : dict) -> dict:
+    """
+    Merge changes into a plotly property dictionary, as plotly's update does: dictionaries are merged, other values
+    replace what is there and None removes the property. Dictionaries are copied in, so the changes are not shared
+
+    :param target: Dictionary to change in place
+    :param changes: Changes
+    :return: target
+    """
+
+    for k, v in changes.items():
+        if v is None:
+            target.pop(k, None)
+        elif isinstance(v, dict):
+            if not isinstance(target.get(k), dict):
+                target[k] = {}
+            _merge(target[k], v)
+        else:
+            target[k] = v
+    return target
+
+def _template_colorway() -> list:
+    """ Colours plotly express gives groups that have no colour of their own: the colorway of the default template """
+
+    return list(pio.templates[pio.templates.default].layout.colorway)
+
+def _groups(df : pd.DataFrame, column : str, order : list=None) -> tuple[list, list]:
+    """
+    Split a dataframe into groups by the values of a column, in the order plotly express uses: the given order, then
+    the order the values appear in. Rows with no value are left out
+
+    :param df: Dataframe
+    :param column: Column to group by
+    :param order: Optional order of values. Values not in it come after, in the order they appear
+    :return: Every value in order (including given values that do not appear), and a list of (value, rows)
+    """
+
+    values = list(dict.fromkeys(list(order or []) + df[column].unique().tolist()))
+    present = df[column].notna()
+    groups = [(v, df[present & (df[column] == v)]) for v in values if not (isinstance(v, float) and pd.isna(v))]
+    return values, [(v, g) for v, g in groups if len(g)]
+
+def _group_colors(values : list, colors : dict=None) -> dict:
+    """
+    Colour of each group, as plotly express gives them: the given colour, or the next colour of the template's
+    colorway, counting every colour given so far
+
+    :param values: Every value in order (see _groups)
+    :param colors: Optional dictionary of value to colour
+    :return: Dictionary of value to colour
+    """
+
+    sequence = _template_colorway()
+    mapping = dict(colors or {})
+    for v in values:
+        if v not in mapping:
+            mapping[v] = sequence[len(mapping) % len(sequence)]
+    return mapping
+
+def _bar_trace(name, color : str, **props) -> dict:
+    """ A bar trace with the properties plotly express gives each group """
+
+    return dict(type="bar", name=name, legendgroup=name, showlegend=True, textposition="auto", xaxis="x", yaxis="y",
+                marker=dict(color=color, pattern=dict(shape="")), **props)
+
+def _shade_traces(traces : list, width : float) -> list:
+    """
+    Shading for the bars of a list of traces (plain dictionaries). See _shade_bars
+
+    :param traces: Traces, changed in place
+    :param width: Width of each bar, in axis units
+    :return: The traces with the shading added: the shadows, then the traces, then the depth and gloss bands
+    """
+
+    def overlay(trace, color, w, offset):
+        t = _merge({}, trace)
+        return _merge(t, dict(
+            marker=dict(color=color, line=dict(width=0), cornerradius=4),
+            width=w,
+            offset=offset,
+            hoverinfo="skip",
+            hovertemplate=None,
+            showlegend=False,
+            text=None,
+            name="",
+        ))
+
+    base = -width / 2
+    shadows, glosses = [], []
+    for trace in traces:
+        if trace.get("type") != "bar":
+            continue
+        color = trace.get("marker", {}).get("color")
+        _merge(trace, dict(
+            width=width,
+            offset=base,
+            opacity=1,
+            marker=dict(color=color, line=dict(color="rgba(0,0,0,0.35)", width=1), cornerradius=4),
+            # Simple bubble: white background, black text, outline matching the bar
+            hoverlabel=dict(bgcolor="#ffffff", bordercolor=color, font=dict(family=FONT, size=13, color="#000000")),
+        ))
+
+        # Drop shadow - slightly offset from the bar
+        shadows.append(overlay(trace, "rgba(15,29,51,0.22)", width, base + 0.14 * width))
+
+        # Depth - dark band over the trailing third
+        glosses.append(overlay(trace, "rgba(0,0,0,0.16)", width * 0.38, base + width * 0.62))
+
+        # Gloss - light band over the leading half
+        glosses.append(overlay(trace, "rgba(255,255,255,0.34)", width * 0.42, base + width * 0.04))
+
+    # Shadows draw first and gloss last
+    return shadows + traces + glosses
+
 def _shade_bars(fig : go.Figure, width : float) -> None:
     """
     Add shading effects to the bars of a bar figure (horizontal or vertical).
@@ -83,6 +196,9 @@ def _shade_bars(fig : go.Figure, width : float) -> None:
     The overlays copy the geometry of the real bars, so they track zoom / pan,
     and are excluded from hover so tooltips still describe the real bar.
 
+    The work is done on plain dictionaries (see _shade_traces) and the traces put back in one go, which is much
+    quicker than copying and adding plotly trace objects one at a time.
+
     Widths and offsets are measured across the bar, i.e. in row units for
     horizontal bars and in x units for vertical bars. The figure must use
     barmode overlay.
@@ -93,53 +209,9 @@ def _shade_bars(fig : go.Figure, width : float) -> None:
     :type width: float
     """
 
-    def overlay(trace, color, w, offset):
-        t = copy.deepcopy(trace)
-        t.update(
-            marker=dict(color=color, line=dict(width=0), cornerradius=4),
-            width=w,
-            offset=offset,
-            hoverinfo="skip",
-            hovertemplate=None,
-            showlegend=False,
-            text=None,
-            name="",
-        )
-        return t
-
-    base = -width / 2
-    bodies = [t for t in fig.data if isinstance(t, go.Bar)]
-    shadows, glosses = [], []
-
-    for trace in bodies:
-        trace.update(
-            width=width,
-            offset=base,
-            opacity=1,
-            marker=dict(color=trace.marker.color, line=dict(color="rgba(0,0,0,0.35)", width=1), cornerradius=4),
-            # Simple bubble: white background, black text, outline matching the bar
-            hoverlabel=dict(bgcolor="#ffffff", bordercolor=trace.marker.color,
-                            font=dict(family=FONT, size=13, color="#000000")),
-        )
-
-        # Drop shadow - slightly offset from the bar
-        shadows.append(overlay(trace, "rgba(15,29,51,0.22)", width, base + 0.14 * width))
-
-        # Depth - dark band over the trailing third
-        glosses.append(overlay(trace, "rgba(0,0,0,0.16)", width * 0.38, base + width * 0.62))
-
-        # Gloss - light band over the leading half
-        glosses.append(overlay(trace, "rgba(255,255,255,0.34)", width * 0.42, base + width * 0.04))
-
-    # Add the overlays, then reorder so that shadows draw first and gloss last
-    for t in shadows + glosses:
-        fig.add_trace(t)
-
-    n = len(bodies)
-    originals = list(fig.data[:n])
-    new_shadows = list(fig.data[n:n + len(shadows)])
-    new_glosses = list(fig.data[n + len(shadows):])
-    fig.data = tuple(new_shadows + originals + new_glosses)
+    traces = [t.to_plotly_json() for t in fig.data]
+    fig.data = ()
+    fig.add_traces(_shade_traces(traces, width))
 
 def style_axes(fig : go.Figure) -> None:
     """
@@ -149,14 +221,29 @@ def style_axes(fig : go.Figure) -> None:
     :type fig: go.Figure
     """
 
-    fig.update_layout(
+    layout = base_layout()
+    xaxis, yaxis = layout.pop("xaxis"), layout.pop("yaxis")
+    fig.update_layout(**layout)
+    fig.update_xaxes(**xaxis)
+    fig.update_yaxes(**yaxis)
+
+def base_layout() -> dict:
+    """
+    The common look (fonts, gridlines, background) as a layout, for figures built in one go rather than styled
+    with style_axes. Each call gives a new dictionary, which can be changed
+
+    :return: Layout dictionary with font, background, hover label and x and y axis settings
+    :rtype: dict
+    """
+
+    return dict(
         font=dict(family=FONT, size=13, color="#1c2433"),
         paper_bgcolor="#ffffff",
         plot_bgcolor="#f6f8fc",
         hoverlabel=dict(bgcolor="#ffffff", font=dict(family=FONT, size=13, color="#000000"), align="left"),
+        xaxis=dict(gridcolor="#dfe5f0", gridwidth=1, linecolor="#b7c2d6", zeroline=False),
+        yaxis=dict(gridcolor="#e8ecf4", gridwidth=1, linecolor="#b7c2d6", zeroline=False),
     )
-    fig.update_xaxes(gridcolor="#dfe5f0", gridwidth=1, linecolor="#b7c2d6", zeroline=False)
-    fig.update_yaxes(gridcolor="#e8ecf4", gridwidth=1, linecolor="#b7c2d6", zeroline=False)
 
 LEGEND_WIDTH = 190
 """ Extra chart width needed for a legend placed to the right of the plot """
@@ -234,8 +321,9 @@ def gantt(  df : pd.DataFrame,
 
     # Create a new copy of the date
     # Insert an end date (max of the default and largest in data)
-    df_new = df.fillna(value={"end": default_end_date})
-    default_end = max(df_new[x_end[0]].max(), default_end_date)
+    horizon = default_end_date()
+    df_new = df.fillna(value={"end": horizon})
+    default_end = max(df_new[x_end[0]].max(), horizon)
     df_new = df.fillna(value={"end": default_end})
 
     # Hover text, built explicitly so it is always populated
@@ -258,29 +346,34 @@ def gantt(  df : pd.DataFrame,
     # Several bars can share a row, e.g. the availability periods of a resource
     n_rows = max(df_new[y[0]].nunique(), 1) if len(df_new) else 0
 
-    fig = px.timeline(
-        df_new,
-        custom_data=[y[0], "_start", "_end", "_desc", "_opacity"],
-        title=title,
-        x_start=x_start[0],
-        x_end=x_end[0],
-        y=y[0],
-        color=y[0],
-        color_discrete_map=colors,
-        labels ={x_start[0] : x_start[1],
-                 x_end[0] : x_end[1],
-                 y[0] : y[1]}
-    )
+    # The bars, one trace for each row name, as px.timeline makes them. The figure is built in one go from plain
+    # data at the end, which is much quicker than changing a plotly figure a piece at a time
+    custom = [y[0], "_start", "_end", "_desc", "_opacity"]
+    start = pd.to_datetime(df_new[x_start[0]])
+    length = (pd.to_datetime(df_new[x_end[0]]) - start) // pd.Timedelta(milliseconds=1)
+    timeline = df_new.assign(_base=start, _length=length)
+    names, groups = _groups(timeline, y[0])
+    group_colors = _group_colors(names, colors)
+    hover = "<b>%{customdata[0]}</b><br>%{customdata[1]} to %{customdata[2]}<br>%{customdata[3]}<extra></extra>"
+    traces = [_bar_trace(name, group_colors[name], orientation="h", base=g["_base"].to_numpy(), x=g["_length"].to_numpy(),
+                         y=g[y[0]].to_numpy(), customdata=g[custom].to_numpy(), hovertemplate=hover)
+              for name, g in groups]
 
-    fig.update_traces(
-        hovertemplate="<b>%{customdata[0]}</b><br>%{customdata[1]} to %{customdata[2]}"
-                      "<br>%{customdata[3]}<extra></extra>"
+    layout = dict(
+        xaxis=dict(anchor="y", domain=[0.0, 1.0], type="date"),
+        yaxis=dict(anchor="x", domain=[0.0, 1.0], title=dict(text=y[1]), categoryorder="array",
+                   categoryarray=list(reversed(names))),
+        legend=dict(title=dict(text=y[1]), tracegroupgap=0),
+        margin=dict(t=60),
+        barmode="overlay",
     )
-
+    if title:
+        layout["title"] = dict(text=title)
     if link_key is not None:
-        fig.update_layout(meta={"link_key": link_key})
+        layout["meta"] = {"link_key": link_key}
 
     rows = 1
+    shapes, annotations = [], []
     markers = markers or {}
     windows = {k : v for k, v in (windows or {}).items() if pd.notna(v[0]) and pd.notna(v[1])}
     if markers or windows:
@@ -308,44 +401,44 @@ def gantt(  df : pd.DataFrame,
         for first, last, k, is_window in sorted(items, key=lambda i: (i[0], i[1])):
             row = place(first, last, k)
             if not is_window:
-                fig.add_vline(
-                    x=first.timestamp()*1000,
-                    line_width=2,
-                    line_dash="dash",
-                    line_color="#d62839",
-                    annotation_text=k,
-                    annotation_position="top right",
-                    annotation_yshift=20 + row * MARKER_ROW_HEIGHT,
-                    annotation_font=dict(color="#d62839", size=12)
-                )
+                # A dashed line labelled at the top right, as add_vline draws it
+                x = first.timestamp() * 1000
+                shapes.append(dict(type="line", xref="x", yref="y domain", x0=x, x1=x, y0=0, y1=1,
+                                   line=dict(color="#d62839", dash="dash", width=2)))
+                annotations.append(dict(xref="x", yref="y domain", x=x, y=1, xanchor="left", yanchor="top",
+                                        showarrow=False, text=k, yshift=20 + row * MARKER_ROW_HEIGHT,
+                                        font=dict(color="#d62839", size=12)))
                 continue
 
             # Window: dotted line at each end, joined by a horizontal line above the plot
             top = 1 + (20 + row * MARKER_ROW_HEIGHT) / max(plot_height, 1)
             line = dict(color="#d62839", width=2, dash="dot")
             for x in (first, last):
-                fig.add_shape(type="line", xref="x", yref="paper", x0=x, x1=x, y0=0, y1=top, line=line)
-            fig.add_shape(type="line", xref="x", yref="paper", x0=first, x1=last, y0=top, y1=top,
-                          line=dict(color="#d62839", width=2))
-            fig.add_annotation(xref="x", yref="paper", x=first, y=top, text=k, showarrow=False,
-                               xanchor="left", yanchor="bottom", xshift=4,
-                               font=dict(color="#d62839", size=12))
+                shapes.append(dict(type="line", xref="x", yref="paper", x0=x, x1=x, y0=0, y1=top, line=dict(line)))
+            shapes.append(dict(type="line", xref="x", yref="paper", x0=first, x1=last, y0=top, y1=top,
+                               line=dict(color="#d62839", width=2)))
+            annotations.append(dict(xref="x", yref="paper", x=first, y=top, text=k, showarrow=False,
+                                    xanchor="left", yanchor="bottom", xshift=4, font=dict(color="#d62839", size=12)))
         rows = max(len(row_ends), 1)
+    if shapes:
+        layout["shapes"] = shapes
+    if annotations:
+        layout["annotations"] = annotations
 
     # Opacity of each bar, set before shading so the shading is faded with the bar
     if opacity is not None:
-        for trace in fig.data:
-            if isinstance(trace, go.Bar) and trace.customdata is not None:
-                trace.marker.opacity = [float(cd[4]) for cd in trace.customdata]
+        for trace in traces:
+            trace["marker"]["opacity"] = [float(cd[4]) for cd in trace["customdata"]]
 
-    style_axes(fig)
-    _shade_bars(fig, BAR_WIDTH)
+    _merge(layout, base_layout())
+    traces = _shade_traces(traces, BAR_WIDTH)
 
     # Milestone each row is working towards
     if milestones is not None and milestones[0] in df_new.columns and milestones[1] in df_new.columns:
         ms = df_new[df_new[milestones[1]].notna()]
         if not ms.empty:
-            fig.add_trace(go.Scatter(
+            traces.append(dict(
+                type="scatter",
                 x=ms[milestones[1]],
                 y=ms[y[0]],
                 mode="markers",
@@ -355,18 +448,18 @@ def gantt(  df : pd.DataFrame,
                 showlegend=False,
             ))
 
-    fig.update_layout(
+    _merge(layout, dict(
         barmode="overlay",
-        xaxis_title=f"{x_start[1]} - {x_end[1]}",
-        yaxis_title=f"{y[1]}",
+        xaxis=dict(title=dict(text=f"{x_start[1]} - {x_end[1]}")),
+        yaxis=dict(title=dict(text=f"{y[1]}")),
         showlegend=show_legend,
-        legend=LEGEND_OUTSIDE | dict(title_text=y[1]),
+        legend=LEGEND_OUTSIDE | dict(title=dict(text=y[1])),
         title= {'x':0.5, 'xanchor': 'center', 'yanchor': 'top'},
         margin=(dict(l=50, r=50, t=50 + (rows - 1) * MARKER_ROW_HEIGHT, b=50)),
         colorway=px.colors.qualitative.Alphabet,
         height=((n_rows*bar_height) + 100 + (rows - 1) * MARKER_ROW_HEIGHT),
         autosize=True,
-    )
+    ))
 
     # Choose a tick spacing so labels stay readable whatever the date range
     span_days = (df_new[x_end[0]].max() - df_new[x_start[0]].min()).days
@@ -375,20 +468,21 @@ def gantt(  df : pd.DataFrame,
     else:
         dtick, tickformat = "M12", "%Y"
 
-    fig.update_xaxes(
+    _merge(layout["xaxis"], dict(
         dtick=dtick,
         tickformat=tickformat,
         ticklabelmode="period",
         tickangle=0,
         automargin=True
-    )
+    ))
 
     # Tell the html page to offer a scale select box for the ticks
-    meta = dict(fig.layout.meta or {})
+    meta = dict(layout.get("meta") or {})
     meta["scale_ticks"] = True
     meta["scale_default"] = "Quarterly" if dtick == "M3" else "Yearly"
-    fig.update_layout(meta=meta)
+    layout["meta"] = meta
 
+    fig = go.Figure(data=traces, layout=layout)
     return fig
 
 def stacked_bar(df : pd.DataFrame,
@@ -441,30 +535,31 @@ def stacked_bar(df : pd.DataFrame,
     :rtype: px.timeline
     """
 
-    # Create the Plotly Stacked Bar Chart
-    fig = px.bar(
-        df,
-        title=title,
-        x=x[0],
-        y=y[0],
-        color=color,
-        color_discrete_map=colors,
-        category_orders={color: list(colors)} if colors else None,
-        labels={x[0]: x[1], y[0]: y[1]},
-        barmode='stack'
+    # The bars, one trace for each colour group, as px.bar makes them. The figure is built in one go from plain
+    # data at the end, which is much quicker than changing a plotly figure a piece at a time
+    names, groups = _groups(df, color, list(colors) if colors else None)
+    group_colors = _group_colors(names, colors)
+    traces = [_bar_trace(name, group_colors[name], orientation="v", x=g[x[0]].to_numpy(), y=g[y[0]].to_numpy())
+              for name, g in groups]
+    layout = dict(
+        xaxis=dict(anchor="y", domain=[0.0, 1.0], title=dict(text=x[1])),
+        yaxis=dict(anchor="x", domain=[0.0, 1.0], title=dict(text=y[1])),
+        legend=dict(title=dict(text=color), tracegroupgap=0),
+        margin=dict(t=60),
     )
-
-    style_axes(fig)
+    if title:
+        layout["title"] = dict(text=title)
+    _merge(layout, base_layout())
 
     # Plotly cannot layer overlays on a stacked bar, so stack by hand:
     # give every bar an explicit base and draw in overlay mode
     totals = {}
-    for trace in fig.data:
+    for trace in traces:
         bases = []
-        for xv, yv in zip(trace.x, trace.y, strict=True):
+        for xv, yv in zip(trace["x"], trace["y"], strict=True):
             bases.append(totals.get(xv, 0))
             totals[xv] = totals.get(xv, 0) + (yv or 0)
-        trace.base = bases
+        trace["base"] = bases
 
     # Bar width in axis units (milliseconds for dates)
     xs = pd.Series(df[x[0]].unique()).sort_values()
@@ -474,47 +569,42 @@ def stacked_bar(df : pd.DataFrame,
     else:
         width = 0.7
 
-    fig.update_layout(barmode="overlay")
+    layout["barmode"] = "overlay"
 
     # Hover text, built explicitly so it is always populated
     descriptions = descriptions or {}
-    for trace in fig.data:
-        trace.customdata = [[descriptions.get(trace.name, "")]] * len(trace.x)
-    fig.update_traces(
-        hovertemplate=f"<b>%{{fullData.name}}</b><br>{x[1]}: %{{x|{hover_date_format}}}"
-                      f"<br>{y[1]}: %{{y:.4~g}}<br>%{{customdata[0]}}<extra></extra>"
-    )
+    for trace in traces:
+        trace["customdata"] = [[descriptions.get(trace["name"], "")]] * len(trace["x"])
+        trace["hovertemplate"] = (f"<b>%{{fullData.name}}</b><br>{x[1]}: %{{x|{hover_date_format}}}"
+                                  f"<br>{y[1]}: %{{y:.4~g}}<br>%{{customdata[0]}}<extra></extra>")
 
     if link_key is not None:
-        fig.update_layout(meta={"link_key": link_key, "link_by": "trace"})
+        layout["meta"] = {"link_key": link_key, "link_by": "trace"}
     if link_to is not None:
-        fig.update_layout(meta={"link_key": link_to[0], "link_to": link_to[1]})
+        layout["meta"] = {"link_key": link_to[0], "link_to": link_to[1]}
 
-    _shade_bars(fig, width)
+    traces = _shade_traces(traces, width)
 
     # Clean up the X-Axis formatting
-    fig.update_xaxes(
-        tickmode="array",
-        tickvals=df[x[0]].unique(),
-        tickangle=-45
-    )
+    _merge(layout["xaxis"], dict(tickmode="array", tickvals=df[x[0]].unique(), tickangle=-45))
     if tickformat is not None:
-        fig.update_xaxes(tickformat=tickformat)
+        layout["xaxis"]["tickformat"] = tickformat
 
     # Fill the card, unless the bars need more room than it has, in which case the chart scrolls
     plot_width = bar_width * len(df[x[0]].unique())
     if plot_width > MAX_PLOT_WIDTH:
-        fig.update_layout(width=plot_width + 200 + (LEGEND_WIDTH if legend_outside else 0), autosize=False)
+        _merge(layout, dict(width=plot_width + 200 + (LEGEND_WIDTH if legend_outside else 0), autosize=False))
     else:
-        fig.update_layout(autosize=True)
+        layout["autosize"] = True
 
     # Update layout
-    fig.update_layout(
+    _merge(layout, dict(
         height=height,
-        legend_title_text=color.split(".")[-1].replace("_", " ").title(),
+        legend=dict(title=dict(text=color.split(".")[-1].replace("_", " ").title())),
         margin=(dict(l=50, r=50, t=50, b=50)),
         colorway=px.colors.qualitative.Alphabet,
-        legend=LEGEND_OUTSIDE if legend_outside else dict(
+    ))
+    _merge(layout, dict(legend=LEGEND_OUTSIDE if legend_outside else dict(
             yanchor="top",
             y=0.99,
             xanchor="left",
@@ -522,9 +612,9 @@ def stacked_bar(df : pd.DataFrame,
             bgcolor="rgba(255,255,255,0.85)",
             bordercolor="#b7c2d6",
             borderwidth=1
-        ),
-    )
+        )))
 
+    fig = go.Figure(data=traces, layout=layout)
     return fig
 
 __all__ = [

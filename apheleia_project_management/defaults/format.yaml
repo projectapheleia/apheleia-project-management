@@ -11,8 +11,8 @@ data:
   # Small heading above the title of the top level page
   kicker: "Project Management"
 
-  # Line under the title. {stamp} is the date and time the report was made
-  generated: "Report generated {stamp}"
+  # Line under the title. {stamp} is the date and time the report was made, {today} the report date (--today)
+  generated: "Report generated {stamp} · Report date {today}"
 
   # Label of the theme chooser in the toolbar
   theme_label: "Theme"

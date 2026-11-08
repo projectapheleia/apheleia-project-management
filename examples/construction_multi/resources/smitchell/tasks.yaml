@@ -25,6 +25,9 @@ data:
   start: '2029-01-01'
   estimate: 25
   status:
+  - date: '2026-01-05'
+    spent: 0
+    remaining: 25
   - date: '2026-11-07'
     spent: 0
     remaining: 25

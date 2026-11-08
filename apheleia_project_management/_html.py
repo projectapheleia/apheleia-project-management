@@ -7,7 +7,7 @@ from pathlib import Path
 import pandas as pd
 
 from . import _format
-from ._utils import value_to_filename
+from ._utils import today_text, value_to_filename
 
 COLUMN_HELP = {
     "task": "Name of the task - the smallest unit of tracked work.",
@@ -50,9 +50,10 @@ COLUMN_HELP = {
     "% complete": "Spent effort as a percentage of spent plus remaining effort.",
     "status": "Complete (nothing remaining), In progress, or Not started (nothing spent yet).",
     "last_status": "Date of the latest status update for the task.",
-    "forecast_end": "Forecast completion: latest status date (not earlier than today for unfinished tasks) plus the remaining working days.",
+    "forecast_end": "Forecast completion: latest status date (not earlier than today for unfinished tasks, if the report has a date) plus the remaining working days.",
     "availability": "Percentage of the resource's time available in this period (100% = full time). Defaults to 100% if not given.",
     "available today": "Percentage of the resource's time available today. 0% (no active period) if today is outside all of their availability periods, e.g. they have left, not yet started or are between periods.",
+    "available at latest update": "Percentage of the resource's time available on the date of the latest status update in the input, as the report has no date. 0% (no active period) if that date is outside all of their availability periods.",
     "periods": "Number of availability periods given for the resource.",
     "allocations.start": "First month of this resource allocation.",
     "allocations.end": "Last month of this resource allocation.",
@@ -78,15 +79,13 @@ SECTION_HELP = {
     "availability": "Availability of the resource over time. Each bar is one availability period, from its start date to its end date; "
                     "a period with no end date runs to the default horizon. Bars are faded in proportion to availability, so "
                     "a period at 0% is faint; gaps between bars are times the resource is not available. Hover for the percentage. "
-                    "The dashed red line marks today.",
+                    "The dashed red line marks today, if the report has a date.",
     "resource availability": "Availability of each resource over time. Each bar is one availability period, from its start date to its end date; "
                              "a period with no end date runs to the default horizon. Bars are faded in proportion to availability, so "
                              "a period at 0% is faint; gaps between bars are times the resource is not available. Hover for the percentage. "
-                             "The dashed red line marks today.",
+                             "The dashed red line marks today, if the report has a date.",
     "task timeline": "Gantt chart of tasks. A bar starts at the first status update and ends at the forecast completion date "
-                     "(latest status date plus the remaining effort in working days). Incomplete tasks are never forecast to end before today.",
-    "task progress": "Weekly effort burn-up. Each stacked bar shows effort already spent plus effort still remaining, "
-                     "so the total height is the current estimate to complete and the spent part shows delivery to date.",
+                     "(latest status date plus the remaining effort in working days). Incomplete tasks are never forecast to end before today, if the report has a date.",
     "project timeline": "Planned duration of the project. Milestones are marked in red and labelled with their identifier: a dashed line is a milestone "
                         "with a due date only, and a dotted line at each end joined across the top is a milestone window, due on its end date.",
     "project timelines": "Planned duration of every project. Bars span start to end date; projects without an end date run to the default horizon.",
@@ -111,11 +110,11 @@ INDEX_HELP = {
 """ Page level help for the overview page of each container type """
 
 DETAIL_HELP = {
-    "project": "A project: a planned piece of work with a start and end date and milestones. Its workpackages are listed on the Workpackages tab.",
+    "project": "A project: a planned piece of work with a start and end date and milestones. The Summary tab shows its status, the Timeline tab its dates and milestones, and the Burnchart tab its progress and forecast end date. Its workpackages are listed on the Workpackages tab.",
     "resource": "A resource: a person or team that work can be allocated to. The chart shows when they are available.",
     "milestone": "A milestone: a checkpoint shared by projects. Each project sets its own date for it.",
-    "workpackage": "A workpackage: a group of tasks and resource allocations that delivers part of a project.",
-    "task": "A task: the smallest unit of tracked work. The charts show its forecast timeline and the effort spent and remaining.",
+    "workpackage": "A workpackage: a group of tasks and resource allocations that delivers part of a project. The Summary tab shows its checks and task progress, the Timeline tab its dates and tasks, and the Burnchart tab its progress and forecast end date.",
+    "task": "A task: the smallest unit of tracked work. The Summary tab shows its latest status, the Timeline tab its forecast timeline and the Burnchart tab its progress and forecast end date.",
 }
 """ Page level help for a page describing a single item """
 
@@ -1412,7 +1411,7 @@ class HTML:
         <div>
             <div class="page-kicker">{_html.escape(kicker)}</div>
             <h1 class="page-title"{_tip(tip)}>{_html.escape(title)}{_info_badge(tip)}</h1>
-            <div class="page-meta">{_html.escape(self.format.generated.replace("{stamp}", stamp))}</div>
+            <div class="page-meta">{_html.escape(self.format.generated.replace("{stamp}", stamp).replace("{today}", today_text()))}</div>
         </div>
         {self.logo()}
     </div>

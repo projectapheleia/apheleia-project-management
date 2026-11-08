@@ -2,6 +2,7 @@
 import sys
 from pathlib import Path
 
+import pandas as pd
 import yaml
 
 from . import _format
@@ -11,7 +12,7 @@ from ._milestones import Milestones
 from ._projects import Projects
 from ._resources import Resources
 from ._tasks import Tasks
-from ._utils import smart_date_converter
+from ._utils import set_data_dates, smart_date_converter
 from ._workpackages import WorkPackages
 
 # Add version
@@ -127,6 +128,35 @@ def create_containers(path : Path, data : dict[str, dict]) -> None:
 
         # Import data
         c.import_data(v)
+
+    # Dates that stand in for the report date when it has none
+    set_data_dates(latest_update(), latest_date(data))
+
+def latest_update() -> (pd.Timestamp | None):
+    """
+    Latest status update of any task
+
+    :return: Date, or None if there are no status updates
+    """
+
+    index = containers.get("tasks", {}).get("index")
+    if index is None or index.imported_df is None or index.imported_df.empty:
+        return None
+    return pd.to_datetime(index.imported_df["status.date"]).max()
+
+def latest_date(value) -> (pd.Timestamp | None):
+    """
+    Latest date anywhere in the imported data
+
+    :param value: Imported data (dictionaries and lists of definitions)
+    :return: Date, or None if there are no dates
+    """
+
+    if isinstance(value, pd.Timestamp):
+        return value
+    items = value.values() if isinstance(value, dict) else value if isinstance(value, list) else []
+    dates = [d for d in (latest_date(v) for v in items) if d is not None and pd.notna(d)]
+    return max(dates) if dates else None
 
 def export_to_html(path : Path):
     """

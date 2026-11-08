@@ -8,6 +8,9 @@ data:
   start: '2026-04-01'
   estimate: 60
   status:
+  - date: '2026-01-05'
+    spent: 0
+    remaining: 60
   - date: '2026-04-01'
     spent: 0
     remaining: 60

@@ -14,7 +14,7 @@ from ._tasks import (
     task_summary_stats,
     task_summary_table,
 )
-from ._utils import default_end_date, smart_date_converter, today
+from ._utils import HORIZON, default_end_date, reference_date, reference_text, smart_date_converter, today, today_markers
 from ._workpackages import create_allocation_chart
 
 COLUMNS = ["resource", "uname", "start", "end", "availability", "profile"]
@@ -183,6 +183,16 @@ def available_today_text(value) -> str:
 
     return NO_ACTIVE_PERIOD if pd.isna(value) else availability_text(value)
 
+def available_column() -> str:
+    """
+    Name of the column of availability on the reference date: available today, or available at latest update when the
+    report has no date
+
+    :return: str
+    """
+
+    return "available today" if today() is not None else "available at latest update"
+
 def resource_summary(df : pd.DataFrame) -> pd.DataFrame:
     """
     One row per resource: first start, last end and availability today
@@ -203,8 +213,9 @@ def resource_summary(df : pd.DataFrame) -> pd.DataFrame:
         periods=("resource", "size"),
         profile=("profile", "first"),
     )
-    now = availability_on(d, today)
-    summary.insert(4, "available today", [available_today_text(now.get(r)) for r in summary["resource"]])
+    date = reference_date()
+    now = availability_on(d, date) if date is not None else pd.Series(dtype=float)
+    summary.insert(4, available_column(), [available_today_text(now.get(r)) if date is not None else "" for r in summary["resource"]])
     return summary
 
 def period_table(df : pd.DataFrame) -> pd.DataFrame:
@@ -258,8 +269,8 @@ def earliest_start() -> pd.Timestamp:
     if index is not None and index.imported_df is not None:
         start = pd.to_datetime(index.imported_df["start"]).min()
         if pd.notna(start):
-            return min(start, today)
-    return today
+            return min(start, reference_date()) if reference_date() is not None else start
+    return reference_date() if reference_date() is not None else default_end_date() - HORIZON
 
 def create_availability_chart(df : pd.DataFrame, scale : str, colors : dict=None) -> go.Figure:
     """
@@ -289,8 +300,8 @@ def create_availability_chart(df : pd.DataFrame, scale : str, colors : dict=None
     d["end"] = pd.to_datetime(d["end"], errors="coerce")
     d["availability"] = d["availability"].astype(float)
 
-    horizon = max(d["end"].max(), default_end_date) if d["end"].notna().any() else default_end_date
-    d["start"] = d["start"].fillna(d["start"].min() if d["start"].notna().any() else min(today, horizon))
+    horizon = max(d["end"].max(), default_end_date()) if d["end"].notna().any() else default_end_date()
+    d["start"] = d["start"].fillna(d["start"].min() if d["start"].notna().any() else earliest_start())
 
     # Periods covering the whole range
     first = d["start"].min().to_period(freq[0]).start_time
@@ -653,7 +664,7 @@ class Resource(Container):
                                                 ("start", "Start Date"),
                                                 ("end", "End Date"),
                                                 ("resource", "Resource Name"),
-                                                markers={"Today" : today},
+                                                markers=today_markers(),
                                                 description="_hover",
                                                 link_key="resource",
                                                 colors=colors,
@@ -669,7 +680,8 @@ class Resource(Container):
         tab = self.html.add_tab("Details")
         tab.add_table("Resource Details", resource_summary(df), transpose=True,
                       help="Definition of this resource as given in the resources input file. Start and end are the first "
-                           "and last dates of its availability periods, and available today is its availability now.")
+                           "and last dates of its availability periods, and " + available_column() + " is its availability on "
+                           + reference_text() + ".")
 
         super().export_html()
 
@@ -757,7 +769,7 @@ class Resource(Container):
                            "remaining (days), so the full length is the current estimate for the task. "
                            "Blue is effort within the original estimate (the black line), red is effort past it, so a late task ends in red. "
                            "Click a bar to open the task page.")
-        tab.add_chart("Task Timeline", create_task_timeline(t, markers={"Today" : today}))
+        tab.add_chart("Task Timeline", create_task_timeline(t, markers=today_markers()))
         tab.add_table("Tasks", task_summary_table(t), units=True,
                       help="Progress of every task this resource is associated with. A task shared with other people is "
                            "shown in full: its effort is that of everyone working on it. Remaining of 0 means the task "
@@ -835,7 +847,7 @@ class Resources(Container):
                                                         ("start", "Start Date"),
                                                         ("end", "End Date"),
                                                         ("resource", "Resource Name"),
-                                                        markers={"Today" : today},
+                                                        markers=today_markers(),
                                                         link_key="resource",
                                                         description="_hover",
                                                         colors=colors,
@@ -867,7 +879,8 @@ class Resources(Container):
         tab = self.html.add_tab("Resources")
         tab.add_table("Resources", resource_summary(df),
                       help="All resources. Start and end are the first and last dates of each resource's availability "
-                           "periods, and available today is their availability now. Click a name to open the resource page.")
+                           "periods, and " + available_column() + " is their availability on " + reference_text() + ". "
+                           "Click a name to open the resource page.")
         tab.add_table("Availability Periods", period_table(df), help=PERIODS_HELP)
 
         super().export_html()

@@ -2,9 +2,107 @@ import re
 
 import pandas as pd
 
-# Get today's date - save in case script cross day boundary
-today = pd.Timestamp.now().normalize()
-default_end_date = today + pd.Timedelta(days=365)
+HORIZON = pd.Timedelta(days=365)
+""" How far past the report date charts draw items that have no end date """
+
+_dates = {
+    "today" : pd.Timestamp.now().normalize(),
+    "latest_update" : None,
+    "latest_date" : None,
+}
+""" The report date (None for none), the latest status update and the latest date anywhere in the input """
+
+def set_today(value) -> None:
+    """
+    Set the report date: the day the report is made for. By default it is the day the report is run.
+
+    With no report date (None) nothing is marked as today and forecasts start from the latest status update of each
+    task. Checks that need a current date (stale tasks, the current milestone, availability now) use the latest status
+    update in the input instead.
+
+    :param value: Date (anything pandas reads as a date), or None for no report date
+    :return: None
+    """
+
+    _dates["today"] = None if value is None else pd.Timestamp(value).normalize()
+
+def set_data_dates(latest_update, latest_date) -> None:
+    """
+    Record the latest status update and the latest date in the input, which stand in for the report date when there is none
+
+    :param latest_update: Latest status update of any task, or None
+    :param latest_date: Latest date anywhere in the input, or None
+    :return: None
+    """
+
+    _dates["latest_update"] = None if latest_update is None or pd.isna(latest_update) else pd.Timestamp(latest_update).normalize()
+    _dates["latest_date"] = None if latest_date is None or pd.isna(latest_date) else pd.Timestamp(latest_date).normalize()
+
+def today() -> (pd.Timestamp | None):
+    """
+    The report date
+
+    :return: The report date, or None if the report has none
+    """
+
+    return _dates["today"]
+
+def reference_date() -> (pd.Timestamp | None):
+    """
+    The date checks are made against: the report date, or the latest status update in the input if there is no report date
+
+    :return: Date, or None if there is no report date and no status update
+    """
+
+    return _dates["today"] if _dates["today"] is not None else _dates["latest_update"]
+
+def reference_text() -> str:
+    """
+    Text naming the date checks are made against, e.g. "today (2026-11-09)"
+
+    :return: str
+    """
+
+    if _dates["today"] is not None:
+        return f"the report date ({_dates['today']:%Y-%m-%d})"
+    if _dates["latest_update"] is not None:
+        return f"the latest status update ({_dates['latest_update']:%Y-%m-%d}), as the report has no date"
+    return "nothing, as the report has no date and there are no status updates"
+
+def today_text() -> str:
+    """
+    The report date as text, or a note that there is none
+
+    :return: str
+    """
+
+    if _dates["today"] is not None:
+        return f"{_dates['today']:%Y-%m-%d}"
+    if _dates["latest_update"] is not None:
+        return f"none (as of the latest status update, {_dates['latest_update']:%Y-%m-%d})"
+    return "none"
+
+def today_markers() -> dict:
+    """
+    Markers for a chart: today, if the report has a date
+
+    :return: Dictionary of marker name to date
+    """
+
+    return {"Today" : _dates["today"]} if _dates["today"] is not None else {}
+
+def default_end_date() -> pd.Timestamp:
+    """
+    End date given to items that have none, so that they can be drawn: a year after the report date, or after the latest
+    status update, or the latest date in the input, if there is no report date
+
+    :return: Date
+    """
+
+    anchor = reference_date()
+    if anchor is None:
+        anchor = _dates["latest_date"] if _dates["latest_date"] is not None else pd.Timestamp.now().normalize()
+    return anchor + HORIZON
 
 def smart_date_converter(value : (str | None)) -> (str | pd.Timestamp | None):
     """
@@ -32,7 +130,8 @@ def milestone_badges(dates) -> list:
     """
     Html badges saying whether each milestone has passed, is current or is upcoming.
 
-    The current milestone is the next one due, i.e. the first dated today or later. The dates are
+    The current milestone is the next one due, i.e. the first dated on or after the reference date (see
+    reference_date). The dates are
     those of a single project, in any order.
 
     :param dates: Milestone dates
@@ -42,7 +141,10 @@ def milestone_badges(dates) -> list:
     """
 
     dates = pd.Series(pd.to_datetime(list(dates), errors="coerce"))
-    upcoming = dates[dates >= today]
+    now = reference_date()
+    if now is None:
+        return ["" for _ in dates]
+    upcoming = dates[dates >= now]
     current = upcoming.idxmin() if len(upcoming) else None
 
     badges = []
@@ -51,7 +153,7 @@ def milestone_badges(dates) -> list:
             badges.append("")
         elif i == current:
             badges.append('<span class="badge badge-current">&#9679; Current milestone</span>')
-        elif d < today:
+        elif d < now:
             badges.append('<span class="badge badge-passed">Passed</span>')
         else:
             badges.append('<span class="badge badge-upcoming">Upcoming</span>')
@@ -191,6 +293,13 @@ def value_to_filename(value : str) -> str:
 
 __all__ = [
     "today",
+    "set_today",
+    "set_data_dates",
+    "reference_date",
+    "reference_text",
+    "today_text",
+    "today_markers",
+    "default_end_date",
     "smart_date_converter",
     "milestone_badges",
     "milestone_dates_text",

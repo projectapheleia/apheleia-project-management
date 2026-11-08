@@ -221,7 +221,8 @@ Task progress is derived from the latest status update:
 - **Forecast end** is the date of the latest status update plus the remaining effort in working days, rounded \
   up to a whole day. \
   If the task is not complete, the forecast is made from today if the latest update is in the past, and from \
-  the start date if the task has not yet started, so an unfinished task is never forecast to finish in the past
+  the start date if the task has not yet started, so an unfinished task is never forecast to finish in the past. \
+  If the report has no date (``--today None``, see :doc:`../report/report`) it is made from the latest update
 
 Tasks have no milestone of their own. On the project page each task is counted against the first milestone \
 dated on or after its forecast end - the milestone it is needed by. Tasks forecast to finish after the last \
@@ -231,7 +232,8 @@ Stale Tasks
 -----------
 
 Progress and forecasts are only as good as the latest status update. An unfinished task whose latest update is \
-more than ``stale_days`` calendar days before the day the report is made is marked ``STALE``. ``stale_days`` is \
+more than ``stale_days`` calendar days before the report date (``--today``, see :doc:`../report/report`) is \
+marked ``STALE``. If the report has no date, the latest status update in the input is used instead. ``stale_days`` is \
 set in the format (see :doc:`../report/format`) and is 14 by default:
 
 .. code-block:: yaml
@@ -250,8 +252,8 @@ In the report:
   the *Tasks* tab of each workpackage and resource.
 - The *Task Progress Summary* counts them, and the *Task Status by Milestone* table counts them for each milestone.
 
-Whether a task is stale depends on the day the report is made, so a report made later can show tasks as stale \
-that were not before.
+Whether a task is stale depends on the report date, which is the day the report is run unless ``--today`` gives \
+one, so a report made later can show tasks as stale that were not before.
 
 Mistakes that are caught
 ------------------------

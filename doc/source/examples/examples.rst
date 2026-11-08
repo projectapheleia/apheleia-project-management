@@ -30,6 +30,15 @@ To clean up:
 
     make clean
 
+Every example ``Makefile`` gives the report date with ``--today 2026-11-09`` (the ``TODAY`` variable), so each \
+report is the same whatever day it is built. See :doc:`../report/report`. To build one for another date, or with \
+no date, set ``TODAY``:
+
+.. code-block:: bash
+
+    make report TODAY=2027-01-04
+    make report TODAY=None
+
 Simple
 ------
 
@@ -94,8 +103,8 @@ person. Each shared task is shown on the page of everyone working on it.
 of their own.
 
 ``stale`` sets ``stale_days`` to 30 and has a complete task, which is never stale, tasks not updated for months, \
-which are ``STALE``, and a task updated recently. Being stale depends on the day the report is made, so the \
-recent task becomes stale too as time passes. ``stale_off`` is the same plan with ``stale_days: null``, which \
+which are ``STALE``, and a task updated recently. Being stale depends on the report date, which the \
+``Makefile`` sets to 2026-11-09 with ``--today``; on a later date the recent task becomes stale too. ``stale_off`` is the same plan with ``stale_days: null``, which \
 turns the check off.
 
 ``errors`` has one directory for each way a task can be invalid: an estimate with an unknown unit, that is not a \
@@ -139,6 +148,15 @@ Two reports of the same plan, with a format and themes of their own. See :doc:`.
 extended theme that does not exist, themes that extend each other, a theme defined twice, a missing logo file, a logo \
 given as a file and as SVG, values that would break the style sheet, a bars setting that is not understood and \
 no themes to offer. ``make report`` in ``errors`` checks each fails in the same way as the milestone error cases.
+
+Report Date
+-----------
+
+``examples/today``
+
+``none`` is the ``simple`` example with no report date (``--today None``). Nothing is marked as today, forecasts \
+start from each task's latest status update, and stale tasks, the current milestone and availability are checked \
+against the latest status update in the input. ``errors`` has a report date that is not a date, which is rejected.
 
 Construction Single
 -------------------

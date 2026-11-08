@@ -25,6 +25,9 @@ data:
     start: "2026-03-02"
     estimate: 28
     status:
+      - date: "2026-01-05"  # Baseline: the plan at the start of the project
+        spent: 0
+        remaining: 28
       - date: "2026-03-02"
         spent: 0
         remaining: 25
@@ -42,6 +45,9 @@ data:
     start: "2026-09-01"
     estimate: 32
     status:
+      - date: "2026-01-05"  # Baseline: the plan at the start of the project
+        spent: 0
+        remaining: 32
       - date: "2026-09-01"
         spent: 0
         remaining: 30
@@ -59,6 +65,9 @@ data:
     start: "2027-01-01"
     estimate: 20
     status:
+      - date: "2026-01-05"  # Baseline: the plan at the start of the project
+        spent: 0
+        remaining: 20
       - date: "2026-11-07"
         spent: 0
         remaining: 20
@@ -70,6 +79,9 @@ data:
     start: "2026-02-02"
     estimate: 60
     status:
+      - date: "2026-01-05"  # Baseline: the plan at the start of the project
+        spent: 0
+        remaining: 60
       - date: "2026-02-02"
         spent: 0
         remaining: 60
@@ -87,6 +99,9 @@ data:
     start: "2026-06-01"
     estimate: 62
     status:
+      - date: "2026-01-05"  # Baseline: the plan at the start of the project
+        spent: 0
+        remaining: 62
       - date: "2026-06-01"
         spent: 0
         remaining: 70
@@ -104,6 +119,9 @@ data:
     start: "2026-03-02"
     estimate: 55
     status:
+      - date: "2026-01-05"  # Baseline: the plan at the start of the project
+        spent: 0
+        remaining: 55
       - date: "2026-03-02"
         spent: 0
         remaining: 50
@@ -121,6 +139,9 @@ data:
     start: "2026-04-01"
     estimate: 60
     status:
+      - date: "2026-01-05"  # Baseline: the plan at the start of the project
+        spent: 0
+        remaining: 60
       - date: "2026-04-01"
         spent: 0
         remaining: 60
@@ -138,6 +159,9 @@ data:
     start: "2026-08-03"
     estimate: 35
     status:
+      - date: "2026-01-05"  # Baseline: the plan at the start of the project
+        spent: 0
+        remaining: 35
       - date: "2026-08-03"
         spent: 0
         remaining: 35
@@ -155,6 +179,9 @@ data:
     start: "2026-08-03"
     estimate: 32
     status:
+      - date: "2026-01-05"  # Baseline: the plan at the start of the project
+        spent: 0
+        remaining: 32
       - date: "2026-08-03"
         spent: 0
         remaining: 30
@@ -172,6 +199,9 @@ data:
     start: "2026-11-02"
     estimate: 35
     status:
+      - date: "2026-01-05"  # Baseline: the plan at the start of the project
+        spent: 0
+        remaining: 35
       - date: "2026-11-02"
         spent: 0
         remaining: 35
@@ -189,6 +219,9 @@ data:
     start: "2027-02-01"
     estimate: 15
     status:
+      - date: "2026-01-05"  # Baseline: the plan at the start of the project
+        spent: 0
+        remaining: 15
       - date: "2026-11-07"
         spent: 0
         remaining: 15
@@ -200,6 +233,9 @@ data:
     start: "2027-02-01"
     estimate: 40
     status:
+      - date: "2026-01-05"  # Baseline: the plan at the start of the project
+        spent: 0
+        remaining: 40
       - date: "2026-11-07"
         spent: 0
         remaining: 40
@@ -211,6 +247,9 @@ data:
     start: "2027-03-29"
     estimate: 45
     status:
+      - date: "2026-01-05"  # Baseline: the plan at the start of the project
+        spent: 0
+        remaining: 45
       - date: "2026-11-07"
         spent: 0
         remaining: 45
@@ -222,6 +261,9 @@ data:
     start: "2027-05-31"
     estimate: 40
     status:
+      - date: "2026-01-05"  # Baseline: the plan at the start of the project
+        spent: 0
+        remaining: 40
       - date: "2026-11-07"
         spent: 0
         remaining: 40
@@ -233,6 +275,9 @@ data:
     start: "2027-06-01"
     estimate: 90
     status:
+      - date: "2026-01-05"  # Baseline: the plan at the start of the project
+        spent: 0
+        remaining: 90
       - date: "2026-11-07"
         spent: 0
         remaining: 90
@@ -244,6 +289,9 @@ data:
     start: "2027-10-05"
     estimate: 60
     status:
+      - date: "2026-01-05"  # Baseline: the plan at the start of the project
+        spent: 0
+        remaining: 60
       - date: "2026-11-07"
         spent: 0
         remaining: 60
@@ -255,6 +303,9 @@ data:
     start: "2027-12-28"
     estimate: 30
     status:
+      - date: "2026-01-05"  # Baseline: the plan at the start of the project
+        spent: 0
+        remaining: 30
       - date: "2026-11-07"
         spent: 0
         remaining: 30
@@ -266,6 +317,9 @@ data:
     start: "2027-11-01"
     estimate: 100
     status:
+      - date: "2026-01-05"  # Baseline: the plan at the start of the project
+        spent: 0
+        remaining: 100
       - date: "2026-11-07"
         spent: 0
         remaining: 100
@@ -277,6 +331,9 @@ data:
     start: "2028-02-08"
     estimate: 30
     status:
+      - date: "2026-01-05"  # Baseline: the plan at the start of the project
+        spent: 0
+        remaining: 30
       - date: "2026-11-07"
         spent: 0
         remaining: 30
@@ -288,6 +345,9 @@ data:
     start: "2027-10-01"
     estimate: 120
     status:
+      - date: "2026-01-05"  # Baseline: the plan at the start of the project
+        spent: 0
+        remaining: 120
       - date: "2026-11-07"
         spent: 0
         remaining: 120
@@ -299,6 +359,9 @@ data:
     start: "2027-10-01"
     estimate: 120
     status:
+      - date: "2026-01-05"  # Baseline: the plan at the start of the project
+        spent: 0
+        remaining: 120
       - date: "2026-11-07"
         spent: 0
         remaining: 120
@@ -310,6 +373,9 @@ data:
     start: "2028-03-17"
     estimate: 80
     status:
+      - date: "2026-01-05"  # Baseline: the plan at the start of the project
+        spent: 0
+        remaining: 80
       - date: "2026-11-07"
         spent: 0
         remaining: 80
@@ -321,6 +387,9 @@ data:
     start: "2028-04-03"
     estimate: 80
     status:
+      - date: "2026-01-05"  # Baseline: the plan at the start of the project
+        spent: 0
+        remaining: 80
       - date: "2026-11-07"
         spent: 0
         remaining: 80
@@ -332,6 +401,9 @@ data:
     start: "2028-07-24"
     estimate: 90
     status:
+      - date: "2026-01-05"  # Baseline: the plan at the start of the project
+        spent: 0
+        remaining: 90
       - date: "2026-11-07"
         spent: 0
         remaining: 90
@@ -343,6 +415,9 @@ data:
     start: "2028-09-01"
     estimate: 60
     status:
+      - date: "2026-01-05"  # Baseline: the plan at the start of the project
+        spent: 0
+        remaining: 60
       - date: "2026-11-07"
         spent: 0
         remaining: 60
@@ -354,6 +429,9 @@ data:
     start: "2028-11-24"
     estimate: 30
     status:
+      - date: "2026-01-05"  # Baseline: the plan at the start of the project
+        spent: 0
+        remaining: 30
       - date: "2026-11-07"
         spent: 0
         remaining: 30
@@ -365,6 +443,9 @@ data:
     start: "2029-01-01"
     estimate: 25
     status:
+      - date: "2026-01-05"  # Baseline: the plan at the start of the project
+        spent: 0
+        remaining: 25
       - date: "2026-11-07"
         spent: 0
         remaining: 25
