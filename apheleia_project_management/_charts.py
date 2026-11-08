@@ -43,6 +43,9 @@ def aggregate_by_period(df : pd.DataFrame, x : str, groups : list, value : str, 
     grouped = tmp.groupby([x] + list(groups), as_index=False, sort=False)[value]
     return grouped.sum() if how == "sum" else grouped.last()
 
+INK = "ink"
+""" Trace meta marking a line, marker or text that is drawn in the text colour of the theme, so it stays readable on dark themes """
+
 PALETTE = px.colors.qualitative.Plotly + px.colors.qualitative.Dark24
 """ Colours cycled through when giving each name its own colour """
 

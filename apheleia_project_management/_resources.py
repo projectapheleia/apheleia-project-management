@@ -1,9 +1,10 @@
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 
-from ._charts import SCALES, color_map, gantt, stacked_bar
+from ._charts import INK, SCALES, color_map, gantt, stacked_bar, style_axes
 from ._containers import Container, containers
 from ._tasks import (
     TASK_ESTIMATE_HELP,
@@ -343,10 +344,274 @@ def create_availability_chart(df : pd.DataFrame, scale : str, colors : dict=None
         hoverinfo="skip",
         showlegend=False,
         cliponaxis=False,
+        meta=INK,
     ))
     fig.update_yaxes(dtick=1, rangemode="tozero")
 
     return fig
+
+def monthly_allocation(alloc : pd.DataFrame) -> pd.DataFrame:
+    """
+    How much of each resource's time is allocated in each month, one row per allocation and month
+
+    Allocations are in whole months, so an allocation from 2026-01 to 2026-03 is in each of January, February and March.
+
+    :param alloc: Imported workpackages dataframe, one row per allocation
+    :type alloc: pd.DataFrame
+    :return: Dataframe with resource, month (its first day), project, workpackage and allocation (1.0 = full time)
+    :rtype: pd.DataFrame
+    """
+
+    columns = ["resource", "month", "project", "workpackage", "allocation"]
+    if alloc is None or alloc.empty or "allocations.resource" not in alloc.columns:
+        return pd.DataFrame(columns=columns)
+
+    rows = []
+    for r in alloc.to_dict("records"):
+        start = pd.to_datetime(r.get("allocations.start"), errors="coerce")
+        end = pd.to_datetime(r.get("allocations.end"), errors="coerce")
+        if pd.isna(start) or pd.isna(end) or pd.isna(r.get("allocations.resource")):
+            continue
+        for m in pd.period_range(start.to_period("M"), end.to_period("M"), freq="M"):
+            rows.append({"resource" : r["allocations.resource"], "month" : m.start_time, "project" : r.get("project"),
+                         "workpackage" : r.get("workpackage"), "allocation" : float(r["allocations.allocation"])})
+    return pd.DataFrame(rows, columns=columns)
+
+def monthly_availability(df : pd.DataFrame, months) -> pd.DataFrame:
+    """
+    How much of each resource's time is available in each month
+
+    A resource's availability in a month is the availability of each of their periods, weighted by the fraction of
+    the month it covers: 100% for the whole month is 1.0, 50% is 0.5, and on leave for half the month is 0.5.
+    A period with no start or no end runs from or to the end of time.
+
+    :param df: Resource dataframe, one row per period
+    :type df: pd.DataFrame
+    :param months: First day of each month
+    :return: Dataframe with resource, month and available (1.0 = full time), one row per resource and month
+    :rtype: pd.DataFrame
+    """
+
+    start = pd.to_datetime(df["start"]).fillna(pd.Timestamp.min)
+    end = pd.to_datetime(df["end"]).fillna(pd.Timestamp.max)
+    share = df["availability"].astype(float) / 100
+    day = pd.Timedelta(days=1)
+
+    frames = []
+    for m in months:
+        m_end = m + pd.offsets.MonthEnd(0)
+        overlap = ((end.clip(upper=m_end) - start.clip(lower=m)) / day + 1).clip(lower=0)
+        fte = (overlap / m_end.day * share).groupby(df["resource"], sort=False).sum()
+        frames.append(pd.DataFrame({"resource" : fte.index, "month" : m, "available" : fte.values}))
+    if not frames:
+        return pd.DataFrame(columns=["resource", "month", "available"])
+    return pd.concat(frames, ignore_index=True)
+
+def allocation_vs_availability() -> pd.DataFrame:
+    """
+    Every month in which each resource is allocated to any workpackage, with how much of their time is allocated and available
+
+    Allocations to every project are added together. Resources that are allocated but not defined in the resources
+    are left out, since there is nothing to check them against.
+
+    :return: Dataframe with resource, month, allocated and available (1.0 = full time), and the projects and
+             workpackages (sorted lists) the resource is allocated to that month
+    :rtype: pd.DataFrame
+    """
+
+    columns = ["resource", "month", "allocated", "available", "projects", "workpackages"]
+    resources = containers.get("resources", {}).get("index")
+    wps = containers.get("workpackages", {}).get("index")
+    if resources is None or resources.imported_df is None or resources.imported_df.empty or wps is None:
+        return pd.DataFrame(columns=columns)
+
+    # Every page of the report uses this, so it is worked out once
+    if resources.allocation_check is not None:
+        return resources.allocation_check
+
+    m = monthly_allocation(wps.imported_df)
+    m = m[m["resource"].isin(set(resources.imported_df["resource"]))]
+    if m.empty:
+        resources.allocation_check = pd.DataFrame(columns=columns)
+        return resources.allocation_check
+
+    used = m.groupby(["resource", "month"], as_index=False).agg(
+        allocated=("allocation", "sum"),
+        projects=("project", lambda x: sorted(set(x.dropna()))),
+        workpackages=("workpackage", lambda x: sorted(set(x.dropna()))),
+    )
+    available = monthly_availability(resources.imported_df, sorted(used["month"].unique()))
+    used = used.merge(available, on=["resource", "month"], how="left")
+    used["available"] = used["available"].fillna(0.0)
+    resources.allocation_check = used[columns].sort_values(["resource", "month"]).reset_index(drop=True)
+    return resources.allocation_check
+
+def percent(value : float) -> str:
+    """ A fraction of full time as a percentage, e.g. 1.25 is 125% """
+    return f"{100 * value:.0f}%"
+
+def over_allocation(project : (str | None) = None, resource : (str | None) = None) -> pd.DataFrame:
+    """
+    The months in which resources are allocated more of their time than they have available
+
+    Consecutive months of a resource with the same allocation, availability and workpackages are one row.
+
+    :param project: Only months in which the resource is allocated to this project
+    :type project: str | None
+    :param resource: Only this resource
+    :type resource: str | None
+    :return: Dataframe with resource, from, to, months, time available, time allocated, over allocated (html), project and
+             workpackage (comma separated names), one row per run of months, worst first
+    :rtype: pd.DataFrame
+    """
+
+    columns = ["resource", "from", "to", "months", "time available", "time allocated", "over allocated", "project", "workpackage"]
+    d = allocation_vs_availability()
+    d = d[d["allocated"] > d["available"] + 1e-6]
+    if project is not None:
+        d = d[d["projects"].map(lambda x: project in x)]
+    if resource is not None:
+        d = d[d["resource"] == resource]
+    if d.empty:
+        return pd.DataFrame(columns=columns)
+
+    # Runs of consecutive months that are the same
+    d = d.assign(_projects=d["projects"].map(", ".join), _workpackages=d["workpackages"].map(", ".join),
+                 _allocated=d["allocated"].round(6), _available=d["available"].round(6)).reset_index(drop=True)
+    same = ["resource", "_allocated", "_available", "_projects", "_workpackages"]
+    previous = d.shift()
+    new_run = (d[same] != previous[same]).any(axis=1) | (d["month"] != previous["month"] + pd.DateOffset(months=1))
+    d["_run"] = new_run.cumsum()
+
+    runs = d.groupby("_run", as_index=False).agg(
+        resource=("resource", "first"),
+        start=("month", "min"),
+        end=("month", "max"),
+        months=("month", "size"),
+        available=("available", "first"),
+        allocated=("allocated", "first"),
+        project=("_projects", "first"),
+        workpackage=("_workpackages", "first"),
+    )
+    runs["_over"] = runs["allocated"] - runs["available"]
+    runs = runs.sort_values(["_over", "months"], ascending=False)
+
+    def over_text(r):
+        if r.available <= 1e-6:
+            return '<span class="badge badge-over">NOT AVAILABLE</span>'
+        return f'<span class="badge badge-over">+{percent(r.allocated - r.available)}</span>'
+
+    return pd.DataFrame({
+        "resource" : runs["resource"],
+        "from" : runs["start"].dt.strftime("%Y-%m"),
+        "to" : runs["end"].dt.strftime("%Y-%m"),
+        "months" : runs["months"],
+        "time available" : runs["available"].map(percent),
+        "time allocated" : runs["allocated"].map(percent),
+        "over allocated" : [over_text(r) for r in runs.itertuples()],
+        "project" : runs["project"],
+        "workpackage" : runs["workpackage"],
+    }).reset_index(drop=True)
+
+OVER_ALLOCATION_HELP = ("Months in which a resource is allocated more of their time than they have available, adding up their "
+                        "allocations to every workpackage of every project. Available is their availability that month, weighted "
+                        "by how much of the month each availability period covers, so a week of leave takes about a quarter off. "
+                        "Allocated and available are percentages of full time. Consecutive months that are the same are shown "
+                        "as one row, from the first month to the last. NOT AVAILABLE means the resource has no availability "
+                        "that month at all, for example before they start or after they leave.")
+""" Hover guidance for the over allocation tables """
+
+def add_over_allocation(tab, project : (str | None) = None, resource : (str | None) = None) -> None:
+    """
+    Add the table of over allocated months to a tab, or a line saying there are none
+
+    :param tab: Tab of a page
+    :param project: Only months in which the resource is allocated to this project
+    :type project: str | None
+    :param resource: Only this resource
+    :type resource: str | None
+    :return: None
+    """
+
+    over = over_allocation(project=project, resource=resource)
+    if over.empty:
+        if resource is not None:
+            text = "This resource is never allocated more of their time than they have available."
+        elif project is not None:
+            text = "No resource is allocated more of their time than they have available in any month they work on this project."
+        else:
+            text = "No resource is allocated more of their time than they have available in any month."
+        tab.add_paragraph("Over Allocation", text, help=OVER_ALLOCATION_HELP)
+    else:
+        tab.add_table("Over Allocation", over, help=OVER_ALLOCATION_HELP)
+
+def create_allocation_heatmap() -> (go.Figure | None):
+    """
+    Heatmap of how much of each resource's available time is allocated, by month
+
+    Each cell is the resource's allocation as a percentage of their availability that month. Blue is within it,
+    getting darker as it fills, and red is over it. Months in which a resource is allocated but has no availability
+    are drawn at the top of the scale, the darkest red. Months with no allocation are blank.
+
+    :return: Figure, or None if no resource is allocated
+    :rtype: go.Figure | None
+    """
+
+    d = allocation_vs_availability()
+    if d.empty:
+        return None
+
+    resources = list(dict.fromkeys(containers["resources"]["index"].imported_df["resource"]))
+    resources = [r for r in resources if r in set(d["resource"])]
+    months = pd.date_range(d["month"].min(), d["month"].max(), freq="MS")
+
+    top = 200.0
+    z = np.full((len(resources), len(months)), np.nan)
+    text = np.full((len(resources), len(months)), "", dtype=object)
+    row = {r : i for i, r in enumerate(resources)}
+    col = {m : j for j, m in enumerate(months)}
+    for r in d.itertuples():
+        i, j = row[r.resource], col[r.month]
+        if r.available <= 1e-6:
+            z[i, j] = top
+            share = "No availability"
+        else:
+            z[i, j] = min(100 * r.allocated / r.available, top)
+            share = f"{r.allocated / r.available:.0%} of the time available"
+        text[i, j] = (f"Allocated {percent(r.allocated)}, available {percent(r.available)}<br>{share}"
+                      f"<br>{', '.join(r.workpackages)}")
+
+    # Blue up to 100%, then red
+    edge = 100 / top
+    colorscale = [[0.0, "#EEF0FE"], [edge, "#636EFA"], [edge + 1e-6, "#F4A3A8"], [1.0, "#D62839"]]
+
+    fig = go.Figure(go.Heatmap(
+        z=z,
+        x=months,
+        y=resources,
+        zmin=0,
+        zmax=top,
+        colorscale=colorscale,
+        xgap=2,
+        ygap=2,
+        customdata=text,
+        hovertemplate="<b>%{y}</b> %{x|%b %Y}<br>%{customdata}<extra></extra>",
+        colorbar=dict(title=dict(text="% of available"), ticksuffix="%", tickvals=[0, 50, 100, 150, 200],
+                      ticktext=["0", "50", "100", "150", "200+"]),
+    ))
+    style_axes(fig)
+    fig.update_xaxes(title="Month", tickformat="%b<br>%Y", dtick="M3")
+    fig.update_yaxes(title="Resource", autorange="reversed")
+    fig.update_layout(height=max(len(resources) * 40 + 160, 300), margin=dict(l=50, r=50, t=40, b=50),
+                      meta={"link_key" : "resource"})
+    return fig
+
+ALLOCATION_HEATMAP_HELP = ("How much of each resource's available time is allocated in each month, adding up their allocations "
+                           "to every project. Blue is within their availability, darker as it fills up; red is more than they "
+                           "have available. A cell of 100% is fully allocated. The darkest red is 200% or more, or a month in "
+                           "which they are allocated but not available at all. Blank months have no allocation. Hover for "
+                           "the allocation, availability and workpackages, and click a row to open the resource page.")
+""" Hover guidance for the allocation heatmap """
 
 PERIODS_HELP = ("Each period the resource is available, and the percentage of their time available in it. "
                 "Time between periods, for example leave, is time the resource is not available. An empty end "
@@ -443,13 +708,22 @@ class Resource(Container):
             effort=("effort", "sum"),
         )
 
+        # Their availability over the same months as the charts, which pad the allocations by two months each side
+        months = pd.date_range((start.min() - pd.DateOffset(months=2)).to_period("M").start_time,
+                               (end.max() + pd.DateOffset(months=2)).to_period("M").start_time, freq="MS")
+        available = monthly_availability(self.imported_df, months)
+
+        available_help = (" The dashed line is the effort the resource has available in each period: their availability, "
+                          "weighted by how much of the period each availability period covers. Bars above the line are "
+                          "over allocated.")
         tab = self.html.add_tab("Allocations")
-        tab.add_chart("Allocation by Project", create_allocation_chart(a, "project"),
+        tab.add_chart("Allocation by Project", create_allocation_chart(a, "project", available=available),
                       help="Effort allocated to this resource each period, stacked by project. "
-                           "Click a segment to open the project page.")
-        tab.add_chart("Allocation by Workpackage", create_allocation_chart(a, "workpackage"),
+                           "Click a segment to open the project page." + available_help)
+        tab.add_chart("Allocation by Workpackage", create_allocation_chart(a, "workpackage", available=available),
                       help="Effort allocated to this resource each period, stacked by workpackage. "
-                           "Click a segment to open the workpackage page.")
+                           "Click a segment to open the workpackage page." + available_help)
+        add_over_allocation(tab, resource=self.name)
         tab.add_table("Projects", by_project,
                       help="Total effort this resource is allocated to each project, in person-months.")
         tab.add_table("Workpackages", by_workpackage,
@@ -503,6 +777,9 @@ class Resources(Container):
         :return: None
         """
         super().__init__("resources", name, path)
+
+        self.allocation_check = None
+        """ Result of allocation_vs_availability, once it has been worked out """
 
     def import_data(self, definitions : list[dict]) -> None:
         """
@@ -577,6 +854,15 @@ class Resources(Container):
                                   "Resources with no end date are assumed available to the end of the Gantt chart above. "
                                   "Click a segment to open that resource's page.")
 
+        # How much of their available time each resource is allocated
+        tab = self.html.add_tab("Allocation")
+        heatmap = create_allocation_heatmap()
+        if heatmap is None:
+            tab.add_paragraph("Allocation", "No resource is allocated to a workpackage.", help=ALLOCATION_HEATMAP_HELP)
+        else:
+            tab.add_chart("Allocation of Available Time", heatmap, help=ALLOCATION_HEATMAP_HELP)
+        add_over_allocation(tab)
+
         # Add table to html
         tab = self.html.add_tab("Resources")
         tab.add_table("Resources", resource_summary(df),
@@ -588,4 +874,10 @@ class Resources(Container):
 
 __all__ = [
     "Resources",
+    "monthly_allocation",
+    "monthly_availability",
+    "allocation_vs_availability",
+    "over_allocation",
+    "add_over_allocation",
+    "create_allocation_heatmap",
 ]

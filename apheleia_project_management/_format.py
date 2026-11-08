@@ -27,7 +27,7 @@ BASE_THEME = "default"
 BASE_KEY = "__base__"
 """ Where the built-in base theme is kept while resolving, so a user theme called "default" still has it to fall back on """
 
-FORMAT_KEYS = {"title", "kicker", "generated", "theme_label", "default_theme", "builtin_themes", "logo", "css", "task_unit"}
+FORMAT_KEYS = {"title", "kicker", "generated", "theme_label", "default_theme", "builtin_themes", "logo", "css", "task_unit", "stale_days"}
 THEME_KEYS = {"name", "label", "extends", "dark", "variables", "chart", "bars", "css"}
 LOGO_KEYS = {"file", "svg", "alt", "link", "tooltip", "height"}
 RAMP_KEYS = {"hue", "saturation", "lightness"}
@@ -82,6 +82,8 @@ class Format:
     css : str
     task_unit : str = "md"
     """ Unit of a task estimate, spent or remaining effort given as a number with no unit """
+    stale_days : int | None = 14
+    """ Days an unfinished task can go without a status update before it is stale. None turns the check off """
     themes : list[Theme] = field(default_factory=list)
     drawn_chart : dict[str, str] = field(default_factory=dict)
     """ Chart colours of the built-in default theme, which are the colours the charts are drawn in """
@@ -294,6 +296,10 @@ def configure(formats : list[dict], themes : list[dict]) -> Format:
     if not isinstance(task_unit, str) or task_unit.strip().lower() not in EFFORT_UNITS:
         _fail(sources["task_unit"], f"task_unit {task_unit!r} is not one of: "
                                     + ", ".join(f"{u} ({n})" for u, n in UNIT_NAMES.items()))
+    stale_days = merged["stale_days"]
+    if stale_days is not None and (isinstance(stale_days, bool) or not isinstance(stale_days, int) or stale_days < 1):
+        _fail(sources["stale_days"], f"stale_days must be a whole number of days, 1 or more, or null to turn the check off, "
+                                     f"got {stale_days!r}")
 
     # Themes: the built-in base theme is always kept, since the others take their missing values from it
     raw = {BASE_KEY : next(t for t in default_themes if t["name"] == BASE_THEME)}
@@ -340,6 +346,7 @@ def configure(formats : list[dict], themes : list[dict]) -> Format:
         logo_height=height,
         css=_css_block(sources["css"], "css", merged["css"]),
         task_unit=task_unit.strip().lower(),
+        stale_days=stale_days,
         themes=resolved,
         drawn_chart=_resolve_theme(BASE_KEY, raw, done).chart,
     )

@@ -131,6 +131,31 @@ Every table of workpackages has a *Units* select box, to show effort in man-year
 the default), man-weeks (``mw``) or man-days (``md``). It changes the effort, estimate and allocated columns and \
 the messages in them, on every table on the page, and is remembered by the browser for other pages.
 
+Task Effort
+-----------
+
+The tasks of a workpackage (those that give its name as their ``workpackage``, see :doc:`tasks`) are checked \
+against the workpackage:
+
+Task forecast against the allocation
+    The effort spent plus the effort remaining of all its tasks is what they are now expected to need. If it is \
+    more than the effort allocated to the workpackage, the workpackage is marked ``TASKS OVER ALLOCATION`` with \
+    how much more is needed. This catches workpackages whose tasks have grown, or that have more tasks than were \
+    planned for, before the allocation runs out.
+
+Task estimates against the estimate
+    The original estimates of its tasks are added up. If the workpackage has an ``estimate`` and they come to \
+    more than it, the workpackage is marked ``TASKS OVER ESTIMATE``: the work was broken down into more than \
+    was estimated for it.
+
+Tasks with no estimate add nothing to the task estimates, so the number of them is shown alongside. A \
+workpackage with no tasks is not checked.
+
+The checks are shown in a *Task Effort* table on the workpackages overview, the *Workpackages* tab of each \
+project and the *Tasks* tab of each workpackage, and the workpackages that fail either check are listed under \
+*Workpackages Over Task Effort* on the project summary. The table has a *Units* select box like every other \
+table of effort.
+
 Mistakes that are caught
 ------------------------
 
@@ -169,4 +194,11 @@ The ``workpackages/estimates`` example has a workpackage with no estimate, one w
 a low estimate (so it is over) and one allocated exactly its estimate:
 
 .. literalinclude:: ../../../examples/workpackages/estimates/workpackages.yaml
+    :language: yaml
+
+The ``workpackages/task_effort`` example has a workpackage whose tasks fit, one whose tasks need more than is \
+allocated, one whose task estimates add up to more than its estimate, one with a task with no estimate and one \
+with no tasks:
+
+.. literalinclude:: ../../../examples/workpackages/task_effort/workpackages.yaml
     :language: yaml

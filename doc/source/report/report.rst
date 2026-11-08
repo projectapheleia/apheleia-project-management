@@ -113,7 +113,8 @@ Projects
 
 - **Overview** - timeline of all projects, and a table of their definitions
 - **Project** - a summary of the status of its tasks grouped by the milestone they are needed for, the \
-  tasks that are over their estimate and the workpackages outside their milestone or over their estimate; the \
+  tasks that are over their estimate or stale, the workpackages outside their milestone, over their estimate or \
+  whose tasks need more than they are allocated, and the months its resources are over allocated; the \
   project timeline with its milestones marked; the timeline and \
   resource allocation of its workpackages; and its definition
 
@@ -123,9 +124,10 @@ Projects
 Workpackages
 ^^^^^^^^^^^^
 
-- **Overview** - timeline of all workpackages, the effort allocated to each over time, and a summary table
-- **Workpackage** - workpackage timeline, effort allocated by resource, and the progress, timeline and \
-  forecast completion of its tasks, with those over their estimate
+- **Overview** - timeline of all workpackages, the effort allocated to each over time, a summary table, and \
+  the effort of their tasks against their allocation and estimate
+- **Workpackage** - workpackage timeline, effort allocated by resource, and the effort, progress, timeline and \
+  forecast completion of its tasks, with those over their estimate or stale
 
 .. image:: /images/workpackage_timeline.png
    :align: center
@@ -140,9 +142,11 @@ Resources
 ^^^^^^^^^
 
 - **Overview** - when every resource is available and at what percentage, the number of full time \
-  equivalent resources available over time, each resource's availability today, and every availability period
-- **Resource** - their availability periods, effort allocated by project and by workpackage, the progress of \
-  their tasks (including tasks they share with others) with those over their estimate, and their definition. See :doc:`../inputs/resources` for how to read the availability charts
+  equivalent resources available over time, how much of each resource's available time is allocated each month \
+  and the months they are over allocated, each resource's availability today, and every availability period
+- **Resource** - their availability periods, effort allocated by project and by workpackage against the time \
+  they have available, the months they are over allocated, the progress of their tasks (including tasks they \
+  share with others) with those over their estimate or stale, and their definition. See :doc:`../inputs/resources` for how to read the availability charts
 
 .. image:: /images/resource_availability.png
    :align: center
@@ -156,8 +160,10 @@ Resources
 Tasks
 ^^^^^
 
-- **Overview** - timeline of all tasks, a summary table, the tasks over their estimate and overall progress
-- **Task** - task timeline, its latest status and whether it is within its estimate, and its progress over time
+- **Overview** - timeline of all tasks, a summary table, the tasks over their estimate, the stale tasks and \
+  overall progress
+- **Task** - task timeline, its latest status, whether it is within its estimate and how long ago it was \
+  updated, and its progress over time
 
 .. image:: /images/task_summary.png
    :align: center

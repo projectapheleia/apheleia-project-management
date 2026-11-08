@@ -3,7 +3,7 @@
 #   make clean    - remove all generated reports
 #   make help     - show this help
 
-SUBDIRS := estimates errors
+SUBDIRS := estimates task_effort errors
 
 .PHONY: help report clean $(SUBDIRS)
 

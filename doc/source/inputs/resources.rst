@@ -273,8 +273,37 @@ Resources table
 Availability Periods table
     Every period of every resource, with its dates and percentage.
 
-Each resource's own page also shows the projects and workpackages they are allocated to, and the progress of \
-their tasks.
+Allocation of Available Time
+    A grid with a row for each resource and a column for each month, on the *Allocation* tab. Each cell is how \
+    much of their available time that month is allocated, adding up their allocations to every workpackage of \
+    every project. Blue is within their availability, darker as it fills up, and red is more than they have. \
+    Hover over a cell for the allocation, availability and workpackages.
+
+Over Allocation table
+    The months in which a resource is allocated more of their time than they have available, described below.
+
+Each resource's own page also shows the projects and workpackages they are allocated to, with a dashed line for \
+the time they have available so that over allocation shows as bars above it, their months of over allocation, \
+and the progress of their tasks.
+
+Over allocation
+^^^^^^^^^^^^^^^
+
+Each month, a resource's allocations to every workpackage of every project are added up and compared with the \
+time they have available that month. Their availability is weighted by how much of the month each period \
+covers, in the same way as *Resources Available Over Time*, so:
+
+- someone full time, allocated ``0.6`` to each of two projects, is allocated **120%** and over allocated by 20%
+- someone at 50% allocated ``0.5`` is allocated exactly their time, which is not over
+- someone full time on leave for two weeks of a 30 day month has about **53%** available, so a full time \
+  allocation that month is over
+- someone allocated before they start, or after they leave, has no time available and is marked \
+  ``NOT AVAILABLE``
+
+Consecutive months that are the same are shown as one row, from the first month to the last, worst first. The \
+table is on the *Allocation* tab of the resources overview, the *Allocations* tab of each resource, and the \
+project summary, which shows the months in which the project's resources are over allocated (to this or any \
+other project). Allocations to a resource that is not defined in the resources are not checked.
 
 Examples
 --------
@@ -295,4 +324,11 @@ percentages, someone on leave, people who have left, are yet to start or are bet
 with no dates at all. Each resource has a comment explaining its situation:
 
 .. literalinclude:: ../../../examples/resources/availability/resources.yaml
+    :language: yaml
+
+The ``resources/over_allocation`` example has a resource shared by two projects that together allocate more \
+than their time, one allocated exactly their part time hours, one allocated in a month with leave and one \
+allocated before they join:
+
+.. literalinclude:: ../../../examples/resources/over_allocation/workpackages.yaml
     :language: yaml

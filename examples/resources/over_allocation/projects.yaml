@@ -1,0 +1,10 @@
+type: "projects_definitions"
+data:
+  - project: "Project Red"
+    start: "2026-01-01"
+    end: "2026-06-30"
+    description: "Shares Full Timer with Project Blue"
+  - project: "Project Blue"
+    start: "2026-01-01"
+    end: "2026-09-30"
+    description: "Shares Full Timer with Project Red"

@@ -38,5 +38,9 @@ data:
   # md (man-days), mw (man-weeks), mm (man-months) or my (man-years). Effort given with a unit, e.g. "3 mw", is not affected
   task_unit: "md"
 
+  # An unfinished task whose latest status update is more than this many calendar days before the day the
+  # report is made is marked STALE. A whole number of days, or null to turn the check off
+  stale_days: 14
+
   # Extra CSS added to every page, after the themes. Empty by default
   css: ""

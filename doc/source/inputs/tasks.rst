@@ -227,8 +227,37 @@ Tasks have no milestone of their own. On the project page each task is counted a
 dated on or after its forecast end - the milestone it is needed by. Tasks forecast to finish after the last \
 milestone are listed separately.
 
+Stale Tasks
+-----------
+
+Progress and forecasts are only as good as the latest status update. An unfinished task whose latest update is \
+more than ``stale_days`` calendar days before the day the report is made is marked ``STALE``. ``stale_days`` is \
+set in the format (see :doc:`../report/format`) and is 14 by default:
+
+.. code-block:: yaml
+
+    type: "format_definitions"
+    data:
+      stale_days: 30
+
+Complete tasks are never stale. Set ``stale_days: null`` to turn the check off.
+
+In the report:
+
+- Every task table has an *update check* column saying how long ago the task was last updated, with a red \
+  ``STALE`` badge for stale tasks.
+- *Stale Tasks* lists them, the longest without an update first, on the project summary, the tasks page, and \
+  the *Tasks* tab of each workpackage and resource.
+- The *Task Progress Summary* counts them, and the *Task Status by Milestone* table counts them for each milestone.
+
+Whether a task is stale depends on the day the report is made, so a report made later can show tasks as stale \
+that were not before.
+
 Mistakes that are caught
 ------------------------
+
+``stale_days`` in the format must be a whole number of days, 1 or more, or ``null``. Anything else, such as \
+``"two weeks"`` or ``0``, is reported as an error.
 
 A task that cannot be understood stops the report with a message starting ``ERROR :`` naming the task, and no \
 report is produced.

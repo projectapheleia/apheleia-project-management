@@ -1,0 +1,59 @@
+# Each workpackage is compared with its tasks (tasks.yaml):
+#   task forecast  - spent + remaining of its tasks, checked against the effort allocated
+#   task estimates - the estimates of its tasks added up, checked against the workpackage estimate
+# 1 mm (man-month) is 20 md (man-days).
+type: "workpackages_definitions"
+data:
+  # 2 mm allocated and estimated. Tasks need 25 md (1.25 mm) and are estimated at 25 md: within both
+  - workpackage: "Fits"
+    project: "Project Effort"
+    description: "Tasks within the allocation and the estimate"
+    estimate: "2 mm"
+    allocations:
+        - start: "2026-01"
+          end: "2026-02"
+          resource: "Mickey Mouse"
+          allocation: 1.0
+
+  # 1 mm allocated, no estimate. Tasks now need 35 md (1.75 mm): TASKS OVER ALLOCATION by 0.75 mm
+  - workpackage: "Tasks Over Allocation"
+    project: "Project Effort"
+    description: "Tasks that have grown past the effort allocated"
+    allocations:
+        - start: "2026-03"
+          end: "2026-03"
+          resource: "Mickey Mouse"
+          allocation: 1.0
+
+  # 3 mm allocated, estimated at 40 md (2 mm). Task estimates add up to 50 md: TASKS OVER ESTIMATE by 10 md.
+  # The tasks still need 50 md (2.5 mm), within the 3 mm allocated
+  - workpackage: "Task Estimates Over Estimate"
+    project: "Project Effort"
+    description: "Task estimates that add up to more than the workpackage estimate"
+    estimate: "40 md"
+    allocations:
+        - start: "2026-01"
+          end: "2026-03"
+          resource: "Daffy Duck"
+          allocation: 1.0
+
+  # 1 mm allocated and estimated. One task has no estimate, so the task estimates (10 md) are incomplete
+  - workpackage: "Missing Task Estimates"
+    project: "Project Effort"
+    description: "A task with no estimate"
+    estimate: "1 mm"
+    allocations:
+        - start: "2026-04"
+          end: "2026-04"
+          resource: "Daffy Duck"
+          allocation: 1.0
+
+  # No tasks, so nothing to check
+  - workpackage: "No Tasks"
+    project: "Project Effort"
+    description: "No tasks yet"
+    allocations:
+        - start: "2026-05"
+          end: "2026-05"
+          resource: "Daffy Duck"
+          allocation: 1.0

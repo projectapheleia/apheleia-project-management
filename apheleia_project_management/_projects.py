@@ -7,16 +7,20 @@ import pandas as pd
 
 from ._charts import gantt
 from ._containers import Container, containers
+from ._resources import add_over_allocation
 from ._tasks import TASK_ESTIMATE_HELP, add_over_estimate, milestone_task_summary
 from ._utils import milestone_badges, milestone_dates_text, smart_date_converter, today
 from ._workpackages import (
     ESTIMATE_HELP,
     MILESTONE_HELP,
+    TASK_EFFORT_HELP,
     check_milestones,
     create_allocation_chart,
+    task_effort_table,
     workpackage_table,
     workpackages_outside_milestone,
     workpackages_over_estimate,
+    workpackages_over_task_effort,
 )
 
 DATE_FIELDS = ("date", "start", "end")
@@ -196,6 +200,16 @@ class Project(Container):
             else:
                 tab.add_table("Workpackages Over Estimate", over, help=ESTIMATE_HELP, units=True)
 
+            over = workpackages_over_task_effort(wp_df)
+            if over.empty:
+                tab.add_paragraph("Workpackages Over Task Effort",
+                                  "The tasks of every workpackage fit within its allocation and estimate.", help=TASK_EFFORT_HELP)
+            else:
+                tab.add_table("Workpackages Over Task Effort", over, help=TASK_EFFORT_HELP, units=True)
+
+            # Resources of this project allocated more than they have available, to this and other projects
+            add_over_allocation(tab, project=self.name)
+
         # Add Timeline gantt
         tab = self.html.add_tab("Timeline")
         tab.add_chart("Project Timeline", gantt(
@@ -244,6 +258,7 @@ class Project(Container):
             )
             tab.add_chart("Workpackage Allocations", create_allocation_chart(wp_raw_df, "allocations.resource"))
             tab.add_table("Workpackages", workpackage_table(wp_summary_df), help=MILESTONE_HELP + " " + ESTIMATE_HELP, units=True)
+            tab.add_table("Task Effort", task_effort_table(wp_summary_df), help=TASK_EFFORT_HELP, units=True)
 
         # Add details table
         tab = self.html.add_tab("Details")

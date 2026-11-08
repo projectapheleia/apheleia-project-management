@@ -3,7 +3,7 @@
 #   make clean    - remove all generated reports
 #   make help     - show this help
 
-SUBDIRS := estimates shared units default_unit errors
+SUBDIRS := estimates shared units default_unit stale stale_off errors
 
 .PHONY: help report clean $(SUBDIRS)
 

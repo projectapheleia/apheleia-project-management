@@ -2,8 +2,9 @@ from pathlib import Path
 
 import pandas as pd
 import plotly.express as px
+import plotly.graph_objects as go
 
-from ._charts import SCALES, aggregate_by_period, color_map, gantt, stacked_bar
+from ._charts import INK, SCALES, aggregate_by_period, color_map, gantt, stacked_bar
 from ._containers import Container, containers
 from ._tasks import (
     MISSING,
@@ -12,10 +13,11 @@ from ._tasks import (
     create_task_progress_by_task,
     create_task_timeline,
     project_milestones,
+    task_info,
     task_summary_stats,
     task_summary_table,
 )
-from ._utils import format_months, parse_effort, smart_date_converter, today
+from ._utils import DAYS_PER_MONTH, format_months, parse_effort, smart_date_converter, today
 
 OUTSIDE = '<span class="badge badge-missing">OUTSIDE MILESTONE</span>'
 """ Shown against a workpackage whose dates do not fall within its milestone """
@@ -42,6 +44,22 @@ ESTIMATE_HELP = ("Estimate is the effort the workpackage was originally estimate
                  "to it (allocation x months, summed over its allocations). Workpackages whose allocated effort is more than "
                  "their estimate are marked OVER ESTIMATE. Workpackages with no estimate cannot be checked.")
 """ Hover guidance for the estimate columns """
+
+TASKS_OVER_ALLOCATION = '<span class="badge badge-over">TASKS OVER ALLOCATION</span>'
+""" Shown against a workpackage whose tasks need more effort than is allocated to it """
+
+TASKS_OVER_ESTIMATE = '<span class="badge badge-over">TASKS OVER ESTIMATE</span>'
+""" Shown against a workpackage whose task estimates add up to more than its own estimate """
+
+TASKS_WITHIN = '<span class="badge badge-upcoming">Within allocation</span>'
+""" Shown against a workpackage whose tasks fit within its allocation and estimate """
+
+TASK_EFFORT_HELP = ("Compares the tasks of each workpackage with the workpackage. Task forecast is the effort spent plus the "
+                    "effort remaining of all its tasks, and task estimates the sum of their original estimates. A workpackage "
+                    "is marked TASKS OVER ALLOCATION when its task forecast is more than the effort allocated to it, and TASKS "
+                    "OVER ESTIMATE when its task estimates add up to more than its own estimate. Tasks with no estimate add "
+                    "nothing to the task estimates, so these are counted. Workpackages with no tasks cannot be checked.")
+""" Hover guidance for the task effort tables """
 
 class Workpackage(Container):
 
@@ -109,6 +127,9 @@ class Workpackage(Container):
             tasks_df = tasks_df[tasks_df["workpackage"] == self.name]
 
             tab = self.html.add_tab("Tasks")
+
+            # Task effort against the workpackage
+            tab.add_table("Task Effort", task_effort_table(self.summary_df), help=TASK_EFFORT_HELP, units=True)
 
             # Overall summary
             tab.add_summary("Task Progress Summary", task_summary_stats(tasks_df),
@@ -261,6 +282,7 @@ class WorkPackages(Container):
         # Add table to html
         tab = self.html.add_tab("Workpackages")
         tab.add_table("Workpackages", workpackage_table(self.summary_df), help=MILESTONE_HELP + " " + ESTIMATE_HELP, units=True)
+        tab.add_table("Task Effort", task_effort_table(self.summary_df), help=TASK_EFFORT_HELP, units=True)
 
         super().export_html()
 
@@ -380,6 +402,124 @@ def workpackages_over_estimate(summary_df : pd.DataFrame) -> pd.DataFrame:
     df = df[["workpackage", "estimate", "allocated", "estimate check"]]
     return df.rename(columns={"estimate check" : "problem"}).reset_index(drop=True)
 
+def check_task_effort(summary_df : pd.DataFrame) -> pd.DataFrame:
+    """
+    Check the effort of the tasks of each workpackage against the workpackage
+
+    The task forecast (spent plus remaining, summed over the workpackage's tasks) is checked against the
+    effort allocated to the workpackage, and the sum of the task estimates against the workpackage's
+    estimate, if it has one. Workpackages with no tasks are not checked.
+
+    :param summary_df: One row per workpackage, with effort and estimate (NaN for none) columns, in man-months
+    :type summary_df: pd.DataFrame
+    :return: Copy of the dataframe with tasks, no_estimate, task_estimates, task_forecast and task_spent (man-months),
+             over_allocation and over_estimate (man-months over, 0 or less within, NaN if not checked) and a task_check
+             (html) column
+    :rtype: pd.DataFrame
+    """
+
+    df = summary_df.copy().reset_index(drop=True)
+
+    # Effort of the tasks of each of these workpackages, in man-days
+    totals = pd.DataFrame(columns=["tasks", "no_estimate", "task_estimates", "task_forecast", "task_spent"])
+    index = containers.get("tasks", {}).get("index")
+    if index is not None and index.imported_df is not None and not index.imported_df.empty:
+        status = index.imported_df
+        t = task_info(status[status["workpackage"].isin(df["workpackage"])])
+        totals = t.groupby("workpackage").agg(
+            tasks=("task", "size"),
+            no_estimate=("estimate", lambda x: int(x.isna().sum())),
+            task_estimates=("estimate", "sum"),
+            task_forecast=("total", "sum"),
+            task_spent=("spent", "sum"),
+        )
+
+    totals = df[["workpackage"]].join(totals, on="workpackage").drop(columns="workpackage").fillna(0)
+    df["tasks"] = totals["tasks"].astype(int)
+    df["no_estimate"] = totals["no_estimate"].astype(int)
+    for column in ("task_estimates", "task_forecast", "task_spent"):
+        df[column] = totals[column] / DAYS_PER_MONTH
+
+    has_tasks = df["tasks"] > 0
+    allocated = df["effort"].astype(float)
+    estimate = df["estimate"].astype(float)
+    df["over_allocation"] = (df["task_forecast"] - allocated).where(has_tasks)
+    df["over_estimate"] = (df["task_estimates"] - estimate).where(has_tasks)
+
+    checks = []
+    for r in df.itertuples():
+        if r.tasks == 0:
+            checks.append("No tasks")
+            continue
+
+        a, e = float(r.effort), float(r.estimate)
+        problems = []
+        if r.task_forecast > a + 1e-9:
+            problems.append(f"{TASKS_OVER_ALLOCATION} tasks need {format_months(r.task_forecast)} (spent + remaining), "
+                            f"{format_months(r.task_forecast - a)} more than the {format_months(a)} allocated")
+        if pd.notna(e) and r.task_estimates > e + 1e-9:
+            problems.append(f"{TASKS_OVER_ESTIMATE} task estimates add up to {format_months(r.task_estimates)}, "
+                            f"{format_months(r.task_estimates - e)} more than the workpackage estimate of {format_months(e)}")
+        if not problems:
+            share = f" ({r.task_forecast / a:.0%})" if a > 0 else ""
+            problems.append(f"{TASKS_WITHIN} tasks need {format_months(r.task_forecast)} of the {format_months(a)} allocated{share}")
+
+        text = "<br>".join(problems)
+        if r.no_estimate:
+            text += f"<br>{r.no_estimate} of {r.tasks} task(s) have no estimate and add nothing to the task estimates"
+        checks.append(text)
+
+    df["task_check"] = checks
+    return df
+
+def task_effort_table(summary_df : pd.DataFrame) -> pd.DataFrame:
+    """
+    The table comparing the tasks of each workpackage with it, with effort as html
+
+    :param summary_df: One row per workpackage
+    :type summary_df: pd.DataFrame
+    :return: Dataframe for add_table
+    :rtype: pd.DataFrame
+    """
+
+    return _task_effort_columns(check_task_effort(summary_df))
+
+def _task_effort_columns(checked : pd.DataFrame) -> pd.DataFrame:
+    """ The columns of the task effort table, from the output of check_task_effort """
+
+    df = checked
+
+    def months(v):
+        return format_months(v) if pd.notna(v) else ""
+
+    return pd.DataFrame({
+        "workpackage" : df["workpackage"],
+        "allocated" : [months(v) for v in df["effort"]],
+        "estimate" : [months(v) for v in df["estimate"]],
+        "tasks" : df["tasks"],
+        "no estimate" : df["no_estimate"],
+        "task estimates" : [months(v) for v in df["task_estimates"]],
+        "task forecast" : [months(v) for v in df["task_forecast"]],
+        "task spent" : [months(v) for v in df["task_spent"]],
+        "task check" : df["task_check"],
+    })
+
+def workpackages_over_task_effort(summary_df : pd.DataFrame) -> pd.DataFrame:
+    """
+    The workpackages whose tasks need more effort than is allocated, or whose task estimates are more than its estimate
+
+    :param summary_df: One row per workpackage
+    :type summary_df: pd.DataFrame
+    :return: Rows of task_effort_table with a problem, the furthest over its allocation first
+    :rtype: pd.DataFrame
+    """
+
+    df = check_task_effort(summary_df)
+    bad = (df["over_allocation"] > 1e-9) | (df["over_estimate"] > 1e-9)
+    order = df.loc[bad, "over_allocation"].fillna(0).clip(lower=0).sort_values(ascending=False).index
+    table = _task_effort_columns(df).loc[order]
+    return table.rename(columns={"task check" : "problem"}).reset_index(drop=True)
+
 def workpackage_table(summary_df : pd.DataFrame) -> pd.DataFrame:
     """
     The table of workpackages shown in the report: milestone and estimate checks, with effort as html
@@ -451,14 +591,19 @@ def summarize_df(df : pd.DataFrame) -> pd.DataFrame:
 
     return df_reduced
 
-def create_allocation_chart(df : pd.DataFrame, groupby : str) -> px.bar:
+def create_allocation_chart(df : pd.DataFrame, groupby : str, available : pd.DataFrame=None) -> px.bar:
     """
     Create a stacked bar for allocations
 
     :param df: Dataframe to create chart from
     :type df: pd.DataFrame
-    :return: px.bar
-    :rtype: px.bar
+    :param groupby: Column to stack the bars by
+    :type groupby: str
+    :param available: Optional dataframe with month and available (1.0 = full time) columns, drawn as a line over
+                      the bars so that over allocation shows
+    :type available: pd.DataFrame
+    :return: Chart for each time scale
+    :rtype: dict
     """
 
     # Function to return a list of month starts and ends
@@ -522,6 +667,20 @@ def create_allocation_chart(df : pd.DataFrame, groupby : str) -> px.bar:
             colors=colors,
         )
 
+        # Effort available in each period, adding up the months like the allocations
+        if available is not None and not available.empty:
+            line = aggregate_by_period(available.assign(_all=""), "month", ["_all"], "available", scale, "sum")
+            figs[scale].add_trace(go.Scatter(
+                x=line["month"],
+                y=line["available"],
+                mode="lines+markers",
+                name="Available",
+                meta=INK,
+                line=dict(color="#1c2433", width=2, dash="dash"),
+                marker=dict(size=6, color="#1c2433"),
+                hovertemplate=f"Available: %{{y:.2f}} months<br>%{{x|{hover_format}}}<extra></extra>",
+            ))
+
     return figs
 
 __all__ = [
@@ -534,6 +693,9 @@ __all__ = [
     "format_months",
     "parse_estimate",
     "workpackages_over_estimate",
+    "check_task_effort",
+    "task_effort_table",
+    "workpackages_over_task_effort",
     "workpackages_outside_milestone",
     "create_allocation_chart",
 ]

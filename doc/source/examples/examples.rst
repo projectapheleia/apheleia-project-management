@@ -67,6 +67,10 @@ Workpackages
 of 1 man-year, a low estimate of 60 man-days (so it is flagged ``OVER ESTIMATE``) and an estimate equal to the \
 allocation.
 
+``task_effort`` checks the tasks of each workpackage against it: tasks that fit, tasks that now need more effort \
+than is allocated (``TASKS OVER ALLOCATION``), task estimates that add up to more than the workpackage estimate \
+(``TASKS OVER ESTIMATE``), a task with no estimate, and a workpackage with no tasks.
+
 ``errors`` has one directory for each way an estimate can be invalid: an unknown unit, no unit, a bare number, \
 something that is not a number, a negative estimate and zero. ``make report`` in ``errors`` checks each fails in \
 the same way as the milestone error cases.
@@ -89,10 +93,16 @@ person. Each shared task is shown on the page of everyone working on it.
 ``default_unit`` sets ``task_unit`` to man-weeks, so plain numbers are man-weeks, alongside values with a unit \
 of their own.
 
+``stale`` sets ``stale_days`` to 30 and has a complete task, which is never stale, tasks not updated for months, \
+which are ``STALE``, and a task updated recently. Being stale depends on the day the report is made, so the \
+recent task becomes stale too as time passes. ``stale_off`` is the same plan with ``stale_days: null``, which \
+turns the check off.
+
 ``errors`` has one directory for each way a task can be invalid: an estimate with an unknown unit, that is not a \
 number, zero or negative; status effort in an unknown unit or negative; a status update with no remaining, an \
 invalid date or the same date as another; a unit given as a field; no status updates; an empty list of resources, \
-a resource listed twice and a misspelt resource; and an unknown ``task_unit``. ``make report`` in ``errors`` \
+a resource listed twice and a misspelt resource; an unknown ``task_unit``; and a ``stale_days`` that is text \
+or zero. ``make report`` in ``errors`` \
 checks each fails in the same way as the milestone error cases.
 
 Resources
@@ -104,6 +114,10 @@ Resources
 some with no active period because they have left, have not yet started or are between periods. Their \
 availabilities range from 0 to 100%. It also has periods given out of order, an availability written as \
 ``25%``, a single period given without ``periods`` and a resource with no dates at all.
+
+``over_allocation`` has a resource shared by two projects that together allocate 120% of their time, a part \
+time resource allocated exactly their hours, a resource allocated full time in a month with two weeks of leave, \
+and one allocated before they join. They are shown on the *Allocation* tab of the resources overview.
 
 ``errors`` has one directory for each way a resource's availability periods can be invalid: periods that \
 overlap, an end before the start, an availability outside 0 to 100, a period with no end that is not the last, \

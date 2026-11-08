@@ -1,0 +1,4 @@
+# stale_days: null turns the check for stale tasks off: no task is marked STALE and there is no Stale Tasks table
+type: "format_definitions"
+data:
+  stale_days: null

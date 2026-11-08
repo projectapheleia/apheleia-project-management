@@ -1,0 +1,38 @@
+# Allocations are added up over every project, month by month, and compared with each
+# resource's availability that month. The comments say what the Over Allocation tables show.
+type: "workpackages_definitions"
+data:
+  - workpackage: "Red Build"
+    project: "Project Red"
+    description: "Full Timer at 60%, and Part Timer at exactly their 50%"
+    allocations:
+        # With Blue Build from April: 120% in April to June, so over allocated by 20%
+        - start: "2026-01"
+          end: "2026-06"
+          resource: "Full Timer"
+          allocation: 0.6
+        # Exactly the time available: not over allocated
+        - start: "2026-01"
+          end: "2026-06"
+          resource: "Part Timer"
+          allocation: 0.5
+
+  - workpackage: "Blue Build"
+    project: "Project Blue"
+    description: "Full Timer at 60% from April, On Leave full time, and Late Starter before they join"
+    allocations:
+        # With Red Build: 120% in April to June. Within their time from July
+        - start: "2026-04"
+          end: "2026-09"
+          resource: "Full Timer"
+          allocation: 0.6
+        # Full time, but on leave for half of April: over allocated in April only
+        - start: "2026-01"
+          end: "2026-06"
+          resource: "On Leave"
+          allocation: 1.0
+        # February and March are before they start: NOT AVAILABLE
+        - start: "2026-02"
+          end: "2026-06"
+          resource: "Late Starter"
+          allocation: 1.0

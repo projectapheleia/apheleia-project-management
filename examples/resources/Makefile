@@ -3,7 +3,7 @@
 #   make clean    - remove all generated reports
 #   make help     - show this help
 
-SUBDIRS := availability errors
+SUBDIRS := availability over_allocation errors
 
 .PHONY: help report clean $(SUBDIRS)
 

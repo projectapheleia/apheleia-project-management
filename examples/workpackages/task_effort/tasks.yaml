@@ -1,0 +1,100 @@
+# Effort in man-days. See workpackages.yaml for what each workpackage shows
+type: "tasks_definitions"
+data:
+  - task: "Fits A"
+    project: "Project Effort"
+    workpackage: "Fits"
+    resource: "Mickey Mouse"
+    description: "Finished on its estimate"
+    estimate: 10
+    status:
+      - date: "2026-01-05"
+        spent: 0
+        remaining: 10
+      - date: "2026-01-30"
+        spent: 10
+        remaining: 0
+  - task: "Fits B"
+    project: "Project Effort"
+    workpackage: "Fits"
+    resource: "Mickey Mouse"
+    description: "On track"
+    estimate: 15
+    status:
+      - date: "2026-02-02"
+        spent: 0
+        remaining: 15
+      - date: "2026-02-20"
+        spent: 5
+        remaining: 10
+  - task: "Grown C"
+    project: "Project Effort"
+    workpackage: "Tasks Over Allocation"
+    resource: "Mickey Mouse"
+    description: "Grown from 15 md to 25 md"
+    estimate: 15
+    status:
+      - date: "2026-03-02"
+        spent: 0
+        remaining: 15
+      - date: "2026-03-20"
+        spent: 10
+        remaining: 15
+  - task: "Grown D"
+    project: "Project Effort"
+    workpackage: "Tasks Over Allocation"
+    resource: "Mickey Mouse"
+    description: "Not started"
+    estimate: 10
+    status:
+      - date: "2026-03-02"
+        spent: 0
+        remaining: 10
+  - task: "Estimate E"
+    project: "Project Effort"
+    workpackage: "Task Estimates Over Estimate"
+    resource: "Daffy Duck"
+    description: "Estimated at 30 md"
+    estimate: 30
+    status:
+      - date: "2026-01-05"
+        spent: 0
+        remaining: 30
+      - date: "2026-02-02"
+        spent: 10
+        remaining: 20
+  - task: "Estimate F"
+    project: "Project Effort"
+    workpackage: "Task Estimates Over Estimate"
+    resource: "Daffy Duck"
+    description: "Estimated at 20 md"
+    estimate: 20
+    status:
+      - date: "2026-02-02"
+        spent: 0
+        remaining: 20
+  - task: "Estimated G"
+    project: "Project Effort"
+    workpackage: "Missing Task Estimates"
+    resource: "Daffy Duck"
+    description: "Estimated at 10 md"
+    estimate: 10
+    status:
+      - date: "2026-04-01"
+        spent: 0
+        remaining: 10
+      - date: "2026-04-15"
+        spent: 5
+        remaining: 5
+  - task: "Unestimated H"
+    project: "Project Effort"
+    workpackage: "Missing Task Estimates"
+    resource: "Daffy Duck"
+    description: "No estimate"
+    status:
+      - date: "2026-04-01"
+        spent: 0
+        remaining: 5
+      - date: "2026-04-15"
+        spent: 2
+        remaining: 3

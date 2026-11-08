@@ -7,7 +7,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 
 from . import _format
-from ._charts import BAR_WIDTH, EFFORT_COLORS, SCALES, _shade_bars, aggregate_by_period, gantt, stacked_bar, style_axes
+from ._charts import BAR_WIDTH, EFFORT_COLORS, INK, SCALES, _shade_bars, aggregate_by_period, gantt, stacked_bar, style_axes
 from ._containers import Container, containers
 from ._utils import (
     DAYS_PER_MONTH,
@@ -183,7 +183,8 @@ class Tasks(Container):
 
 def add_over_estimate(tab, df : pd.DataFrame) -> None:
     """
-    Add the table of tasks that are over their estimate to a tab, or a line saying there are none
+    Add the table of tasks that are over their estimate to a tab, or a line saying there are none,
+    followed by the stale tasks (see add_stale)
 
     :param tab: Tab of a page
     :param df: Dataframe of task status updates
@@ -196,6 +197,7 @@ def add_over_estimate(tab, df : pd.DataFrame) -> None:
         tab.add_paragraph("Tasks Over Estimate", "No tasks are over their estimate.", help=TASK_ESTIMATE_HELP)
     else:
         tab.add_table("Tasks Over Estimate", over, units=True, help="Tasks whose spent plus remaining effort is more than their estimate, worst first (by % over). " + TASK_ESTIMATE_HELP)
+    add_stale(tab, df)
 
 def create_task_timeline(df: pd.DataFrame, markers=None) -> px.timeline:
     """
@@ -518,6 +520,11 @@ def task_info(df : pd.DataFrame) -> pd.DataFrame:
     g["over_by"] = np.where(g["has_estimate"], g["total"] - g["estimate"], 0.0)
     g["over"] = g["has_estimate"] & (g["over_by"] > 0)
 
+    # Stale: unfinished, and the latest update is more than stale_days before today
+    limit = _format.active().stale_days
+    g["days_since_update"] = (today - g["last_status"]).dt.days
+    g["stale"] = ((g["remaining"] != 0) & (g["days_since_update"] > limit)) if limit is not None else False
+
     return g
 
 def over_badge(days : float) -> str:
@@ -556,6 +563,86 @@ def estimate_check(r) -> str:
         return f"{OVER_ESTIMATE} finished in {format_days(r.spent)}, {over}"
     return (f"{OVER_ESTIMATE} already spent {format_days(r.spent)}, past the estimate. With {format_days(r.remaining)} "
             f"still to do it is {over}")
+
+STALE = '<span class="badge badge-over">STALE</span>'
+""" Shown against an unfinished task that has gone too long without a status update """
+
+def stale_help() -> str:
+    """ Hover guidance for the stale task columns and tables, which depends on stale_days of the format """
+
+    limit = _format.active().stale_days
+    if limit is None:
+        return "The check for stale tasks is turned off (stale_days is null in the format)."
+    return (f"An unfinished task is STALE when its latest status update is more than {limit} days before the day the report "
+            f"was made, so its spent, remaining and forecast may be out of date. Complete tasks are never stale. "
+            f"The number of days is stale_days in the format.")
+
+def days_text(n : int) -> str:
+    """ A number of days as text, e.g. 1 day, 3 days """
+    return f"{n} day" if abs(n) == 1 else f"{n} days"
+
+def update_check(r) -> str:
+    """
+    Html saying how long ago a task was last updated, and whether it is stale
+
+    :param r: Row of task_info
+    :return: Html
+    :rtype: str
+    """
+
+    n = int(r.days_since_update)
+    if r.remaining == 0:
+        return "Complete"
+    if r.stale:
+        return f"{STALE} last updated {days_text(n)} ago, more than {days_text(_format.active().stale_days)}"
+    if n < 0:
+        return f"Latest update is dated {days_text(-n)} in the future"
+    return "Updated today" if n == 0 else f"Updated {days_text(n)} ago"
+
+def tasks_stale(df : pd.DataFrame) -> pd.DataFrame:
+    """
+    Unfinished tasks that have gone more than stale_days without a status update
+
+    :param df: Dataframe of task status updates
+    :type df: pd.DataFrame
+    :return: One row per stale task, the longest without an update first. Effort is html
+    :rtype: pd.DataFrame
+    """
+
+    g = task_info(df)
+    g = g[g["stale"]].sort_values("days_since_update", ascending=False)
+
+    return pd.DataFrame({
+        "task" : g["task"],
+        "workpackage" : g["workpackage"],
+        "resource" : g["resource"],
+        "status" : g["status"],
+        "last_status" : g["last_status"],
+        "days since update" : g["days_since_update"].astype(int),
+        "spent" : [format_days(v) for v in g["spent"]],
+        "remaining" : [format_days(v) for v in g["remaining"]],
+        "problem" : [update_check(r) for r in g.itertuples()],
+    }).reset_index(drop=True)
+
+def add_stale(tab, df : pd.DataFrame) -> None:
+    """
+    Add the table of stale tasks to a tab, or a line saying there are none. Nothing is added if the check is off
+
+    :param tab: Tab of a page
+    :param df: Dataframe of task status updates
+    :type df: pd.DataFrame
+    :return: None
+    """
+
+    limit = _format.active().stale_days
+    if limit is None:
+        return
+    stale = tasks_stale(df)
+    if stale.empty:
+        tab.add_paragraph("Stale Tasks", f"Every unfinished task has a status update in the last {days_text(limit)}.", help=stale_help())
+    else:
+        tab.add_table("Stale Tasks", stale, units=True,
+                      help="Unfinished tasks whose latest status update is too old, the longest without an update first. " + stale_help())
 
 def tasks_over_estimate(df : pd.DataFrame) -> pd.DataFrame:
     """
@@ -620,6 +707,7 @@ def task_summary_table(df : pd.DataFrame) -> pd.DataFrame:
         "variance" : [show_variance(r) for r in g.itertuples()],
         "% complete" : g["complete"].round(0).astype(int),
         "estimate check" : [estimate_check(r) for r in g.itertuples()],
+        "update check" : [update_check(r) for r in g.itertuples()],
     })
 
     return out
@@ -697,6 +785,7 @@ def milestone_task_summary(tasks : pd.DataFrame, milestones : pd.DataFrame=None,
             "over estimate" : (f'<span class="badge badge-over">{int(sel["over"].sum())} task(s), '
                                f'+{format_days(sel.loc[sel["over"], "over_by"].sum())}</span>'
                                if sel["over"].any() else 0),
+            "stale" : (f'<span class="badge badge-over">{int(sel["stale"].sum())} task(s)</span>' if sel["stale"].any() else 0),
             "spent" : format_days(spent),
             "remaining" : format_days(remaining),
             "% complete" : bar,
@@ -734,7 +823,7 @@ def task_summary_stats(df : pd.DataFrame) -> list:
         ("Forecast finish", t["forecast_end"].max().strftime("%Y-%m-%d")),
         ("Missing estimates", str(int((~t["has_estimate"]).sum())), int((~t["has_estimate"]).sum()) > 0),
         ("Over estimate", str(int(t["over"].sum())), bool(t["over"].any())),
-    ]
+    ] + ([("Stale", str(int(t["stale"].sum())), bool(t["stale"].any()))] if _format.active().stale_days is not None else [])
 
 def create_task_progress_by_task(df : pd.DataFrame, bar_height=50) -> go.Figure:
     """
@@ -800,6 +889,7 @@ def create_task_progress_by_task(df : pd.DataFrame, bar_height=50) -> go.Figure:
         y=latest.loc[has, "task"],
         mode="markers",
         name="Estimate",
+        meta=INK,
         marker=dict(symbol="line-ns", size=26, line=dict(width=3, color="#1c2433"), color="#1c2433"),
         hovertemplate="<b>%{y}</b><br>Estimate: %{x:.4~g} days<extra></extra>",
     ))
@@ -837,6 +927,9 @@ def create_task_progress_by_task(df : pd.DataFrame, bar_height=50) -> go.Figure:
 __all__ = [
     "tasks_over_estimate",
     "add_over_estimate",
+    "add_stale",
+    "tasks_stale",
+    "update_check",
     "parse_task",
     "estimate_check",
     "TASK_ESTIMATE_HELP",

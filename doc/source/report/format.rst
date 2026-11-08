@@ -19,8 +19,8 @@ There are two input types, found in the input directory like any other:
    * - Type
      - Defines
    * - ``format_definitions``
-     - The title and other text, the logo, which theme the report opens on, extra CSS, and the default unit of \
-       task effort (``task_unit``)
+     - The title and other text, the logo, which theme the report opens on, extra CSS, the default unit of \
+       task effort (``task_unit``) and when a task is stale (``stale_days``)
    * - ``themes_definitions``
      - Themes: the colours and fonts of the page and charts. They are listed in the *Theme* chooser at the \
        top right of every page
@@ -88,6 +88,11 @@ If more than one format is found they are applied in file order, and later ones 
      - ``md``
      - Unit of task effort (``estimate``, ``spent`` and ``remaining``) given as a plain number, for every task in \
        the input: ``md``, ``mw``, ``mm`` or ``my``. Effort given with a unit is not affected. See :doc:`../inputs/tasks`
+   * - ``stale_days``
+     - ``14``
+     - An unfinished task whose latest status update is more than this many calendar days before the day the \
+       report is made is marked ``STALE``. A whole number, 1 or more, or ``null`` to turn the check off. See \
+       :doc:`../inputs/tasks`
 
 Logo
 ^^^^

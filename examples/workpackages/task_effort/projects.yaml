@@ -1,0 +1,6 @@
+type: "projects_definitions"
+data:
+  - project: "Project Effort"
+    start: "2026-01-01"
+    end: "2026-06-30"
+    description: "Example of task effort checked against workpackages"

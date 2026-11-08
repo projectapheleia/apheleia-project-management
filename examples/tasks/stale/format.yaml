@@ -1,0 +1,5 @@
+# An unfinished task is STALE when its latest status update is more than stale_days calendar days
+# before the day the report is made. The default is 14; here it is 30.
+type: "format_definitions"
+data:
+  stale_days: 30

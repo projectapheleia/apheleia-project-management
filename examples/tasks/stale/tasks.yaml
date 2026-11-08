@@ -1,0 +1,60 @@
+# Whether a task is stale depends on the day the report is made, so the tasks below become stale
+# as time passes. The comments say what they show when the report is made in November 2026.
+type: "tasks_definitions"
+data:
+  # Complete: never stale, however old its last update
+  - task: "Finished"
+    project: "Project Stale"
+    workpackage: "Stale"
+    resource: "Mickey Mouse"
+    description: "Finished in February"
+    estimate: 10
+    status:
+      - date: "2026-02-02"
+        spent: 0
+        remaining: 10
+      - date: "2026-02-16"
+        spent: 10
+        remaining: 0
+
+  # In progress, last updated in March: STALE
+  - task: "Forgotten"
+    project: "Project Stale"
+    workpackage: "Stale"
+    resource: "Mickey Mouse"
+    description: "In progress, not updated since March"
+    estimate: 20
+    status:
+      - date: "2026-03-02"
+        spent: 0
+        remaining: 20
+      - date: "2026-03-16"
+        spent: 8
+        remaining: 12
+
+  # Not started, last updated in June: STALE
+  - task: "Never Started"
+    project: "Project Stale"
+    workpackage: "Stale"
+    resource: "Daffy Duck"
+    description: "Not started, not updated since June"
+    estimate: 5
+    status:
+      - date: "2026-06-01"
+        spent: 0
+        remaining: 5
+
+  # In progress, updated at the start of November: up to date until early December 2026
+  - task: "Up To Date"
+    project: "Project Stale"
+    workpackage: "Stale"
+    resource: "Daffy Duck"
+    description: "Updated recently"
+    estimate: 15
+    status:
+      - date: "2026-10-05"
+        spent: 0
+        remaining: 15
+      - date: "2026-11-02"
+        spent: 6
+        remaining: 9

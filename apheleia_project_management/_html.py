@@ -58,6 +58,19 @@ COLUMN_HELP = {
     "allocations.end": "Last month of this resource allocation.",
     "allocations.resource": "Resource that is allocated.",
     "allocations.allocation": "Fraction of a resource's time allocated per month (1.0 = full time).",
+    "update check": "How long ago the task's latest status update was. STALE means an unfinished task has gone longer than stale_days (in the format) without an update, so its progress and forecast may be out of date.",
+    "days since update": "Calendar days from the task's latest status update to the day the report was made.",
+    "stale": "Unfinished tasks whose latest status update is more than stale_days (in the format) old.",
+    "task check": "Whether the tasks of the workpackage fit within it. TASKS OVER ALLOCATION means they need more effort (spent + remaining) than is allocated; TASKS OVER ESTIMATE means their estimates add up to more than the workpackage estimate.",
+    "task estimates": "Original estimates of the workpackage's tasks added together, in the unit chosen in the Units box. Tasks with no estimate add nothing.",
+    "task forecast": "Effort spent plus effort remaining of the workpackage's tasks added together: what the tasks are now expected to need, in the unit chosen in the Units box.",
+    "task spent": "Effort already spent on the workpackage's tasks, in the unit chosen in the Units box.",
+    "from": "First month (YYYY-MM) of this run of over allocated months.",
+    "to": "Last month (YYYY-MM) of this run of over allocated months.",
+    "months": "Number of months: those of the allocation, or of the run of over allocated months.",
+    "time available": "Percentage of full time the resource is available in each of these months, weighted by how much of the month their availability periods cover.",
+    "time allocated": "Percentage of full time the resource is allocated in each of these months, adding up their allocations to every workpackage of every project.",
+    "over allocated": "How much more of their time the resource is allocated than they have available, as a percentage of full time.",
 }
 """ Help text shown when hovering over table column headers """
 
@@ -710,6 +723,13 @@ $(document).ready(function() {
         return idx;
     }
 
+    // Indices of the traces drawn in the text colour of the theme (see INK in _charts.py)
+    function inkTraces(el) {
+        var idx = [];
+        (el.data || []).forEach(function(t, i) { if (t.meta === 'ink') idx.push(i); });
+        return idx;
+    }
+
     function restyleCharts(theme) {
         if (!window.Plotly) return;
         document.querySelectorAll('.js-plotly-plot').forEach(function(el) {
@@ -720,6 +740,12 @@ $(document).ready(function() {
 
             var t = CHART[theme] || CHART[DEFAULT_THEME];
             Plotly.relayout(el, t.layout);
+
+            var ink = inkTraces(el), color = t.layout['font.color'];
+            if (ink.length && color) {
+                Plotly.restyle(el, {'line.color': color, 'marker.color': color, 'marker.line.color': color,
+                                    'textfont.color': color}, ink);
+            }
 
             if (bars.length) {
                 var colors = el.__orig;
@@ -772,6 +798,7 @@ $(document).ready(function() {
     if (embedded && window.parent !== window) {
         window.parent.postMessage({type: 'apheleia-theme-request'}, '*');
     }
+
 
     // Charts are drawn by scripts further down the page, so restyle once everything has loaded
     // Only if the theme changes how the charts look, and the load event may already have happened by now
@@ -934,12 +961,16 @@ class HTMLTab:
 
         self.sections.append(self._card(title, help, TABLE_TIP, f'<div class="table-wrap">{table}</div>', "table", controls=controls))
 
-    def _click_script(self, chart) -> str:
+    def _click_script(self, chart) -> (str | None):
         """
         Javascript making the bars of a chart link to their container pages
 
         Charts opt in by setting layout.meta["link_key"] to a container type. The y value of
         the bar is looked up in that container type and the bar then links to its html page.
+
+        The handlers are on the chart's html element, not Plotly's own events, because Plotly throws its events
+        away whenever it redraws a chart, e.g. when it is resized or a theme is applied. A click is a click on a
+        bar being hovered over, that was not a drag (which zooms or pans the chart).
 
         :param chart: Plotly figure
         :return: Javascript (or None if the chart has no links)
@@ -961,14 +992,18 @@ var gd = document.getElementById('{plot_id}');
 var links = """ + json.dumps(links) + """;
 var byTrace = """ + json.dumps(meta.get("link_by") == "trace") + """;
 var fixed = """ + json.dumps(meta.get("link_to")) + """;
-function key(d) { return fixed !== null ? fixed : (byTrace ? d.points[0].data.name : d.points[0].y); }
-gd.on('plotly_hover', function(d) {
-    if (links[key(d)]) gd.style.cursor = 'pointer';
-});
-gd.on('plotly_unhover', function() { gd.style.cursor = ''; });
-gd.on('plotly_click', function(d) {
-    var k = key(d);
-    if (links[k]) window.open(links[k], '_top');
+function target() {
+    var p = (gd._hoverdata || [])[0];
+    if (!p) return null;
+    return links[fixed !== null ? fixed : (byTrace ? p.data.name : p.y)] || null;
+}
+var down = null;
+gd.addEventListener('mousedown', function(e) { down = [e.clientX, e.clientY]; });
+gd.addEventListener('mousemove', function() { gd.style.cursor = target() ? 'pointer' : ''; });
+gd.addEventListener('click', function(e) {
+    var dragged = !down || Math.abs(e.clientX - down[0]) > 4 || Math.abs(e.clientY - down[1]) > 4;
+    var url = target();
+    if (url && !dragged) window.open(url, '_top');
 });
 """
 

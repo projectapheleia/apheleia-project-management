@@ -1,0 +1,21 @@
+type: "resources_definitions"
+data:
+  # Full time throughout
+  - resource: "Full Timer"
+    start: "2026-01-01"
+
+  # Half time throughout
+  - resource: "Part Timer"
+    start: "2026-01-01"
+    availability: 50
+
+  # Full time, with two weeks of leave in April: about 53% available that month
+  - resource: "On Leave"
+    periods:
+      - start: "2026-01-01"
+        end: "2026-03-31"
+      - start: "2026-04-15"
+
+  # Joins in April
+  - resource: "Late Starter"
+    start: "2026-04-01"
