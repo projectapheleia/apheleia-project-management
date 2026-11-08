@@ -1,0 +1,77 @@
+type: "resources_definitions"
+data:
+  # Active: full time, open ended, given as a single period without periods
+  - resource: "Ava Patel"
+    uname: "apatel"
+    start: "2025-01-01"
+    profile: ""
+
+  # Active: part time, a single period with an availability
+  - resource: "Ben Carter"
+    uname: "bcarter"
+    start: "2025-06-01"
+    availability: 60
+    profile: ""
+
+  # Active period but on leave now: a period at 0% covers November 2026
+  - resource: "Cara Lewis"
+    uname: "clewis"
+    periods:
+      - start: "2025-01-01"
+        end: "2026-10-31"
+      - start: "2026-11-01"
+        end: "2026-11-30"
+        availability: 0
+      - start: "2026-12-01"
+
+  # No active period now: a gap between periods, returning at half time
+  - resource: "Dev Sharma"
+    uname: "dsharma"
+    periods:
+      - start: "2025-03-01"
+        end: "2026-09-30"
+      - start: "2027-01-01"
+        availability: 50
+
+  # No active period now: left the team
+  - resource: "Eve Morgan"
+    uname: "emorgan"
+    periods:
+      - start: "2024-01-01"
+        end: "2026-06-30"
+
+  # No active period now: joins in the future at 80%
+  - resource: "Finn Walsh"
+    uname: "fwalsh"
+    periods:
+      - start: "2027-03-01"
+        availability: 80
+
+  # Active: phased return after parental leave, periods given out of order
+  - resource: "Gina Rossi"
+    uname: "grossi"
+    periods:
+      - start: "2026-08-01"
+        end: "2026-12-31"
+        availability: 40
+      - start: "2026-01-01"
+        end: "2026-03-31"
+      - start: "2026-04-01"
+        end: "2026-07-31"
+        availability: 0
+      - start: "2027-01-01"
+        end: "2027-06-30"
+        availability: 70
+      - start: "2027-07-01"
+
+  # Active: fixed term contract at a quarter time, with availability written as a percentage string
+  - resource: "Hal Becker"
+    uname: "hbecker"
+    periods:
+      - start: "2026-02-01"
+        end: "2027-01-31"
+        availability: "25%"
+
+  # No dates at all: assumed available full time across the whole chart
+  - resource: "Ivy Chen"
+    uname: "ichen"

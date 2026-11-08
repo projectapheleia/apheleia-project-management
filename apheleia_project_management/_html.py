@@ -44,6 +44,9 @@ COLUMN_HELP = {
     "status": "Complete (nothing remaining), In progress, or Not started (nothing spent yet).",
     "last_status": "Date of the latest status update for the task.",
     "forecast_end": "Forecast completion: latest status date (not earlier than today for unfinished tasks) plus the remaining working days.",
+    "availability": "Percentage of the resource's time available in this period (100% = full time). Defaults to 100% if not given.",
+    "available today": "Percentage of the resource's time available today. 0% (no active period) if today is outside all of their availability periods, e.g. they have left, not yet started or are between periods.",
+    "periods": "Number of availability periods given for the resource.",
     "allocations.start": "First month of this resource allocation.",
     "allocations.end": "Last month of this resource allocation.",
     "allocations.resource": "Resource that is allocated.",
@@ -52,21 +55,26 @@ COLUMN_HELP = {
 """ Help text shown when hovering over table column headers """
 
 SECTION_HELP = {
-    "availability": "Availability of the resource over time. Each bar spans from the resource's start date to its end date; "
-                    "bars with no end date run to the default horizon. The dashed red line marks today.",
-    "resource availability": "Availability of each resource over time. Each bar spans from the resource's start date to its end date; "
-                             "bars with no end date run to the default horizon. The dashed red line marks today.",
+    "availability": "Availability of the resource over time. Each bar is one availability period, from its start date to its end date; "
+                    "a period with no end date runs to the default horizon. Bars are faded in proportion to availability, so "
+                    "a period at 0% is faint; gaps between bars are times the resource is not available. Hover for the percentage. "
+                    "The dashed red line marks today.",
+    "resource availability": "Availability of each resource over time. Each bar is one availability period, from its start date to its end date; "
+                             "a period with no end date runs to the default horizon. Bars are faded in proportion to availability, so "
+                             "a period at 0% is faint; gaps between bars are times the resource is not available. Hover for the percentage. "
+                             "The dashed red line marks today.",
     "task timeline": "Gantt chart of tasks. A bar starts at the first status update and ends at the forecast completion date "
                      "(latest status date plus the remaining effort in working days). Incomplete tasks are never forecast to end before today.",
     "task progress": "Weekly effort burn-up. Each stacked bar shows effort already spent plus effort still remaining, "
                      "so the total height is the current estimate to complete and the spent part shows delivery to date.",
-    "project timeline": "Planned duration of the project. Dashed red lines are milestones, labelled with their identifier, placed on the date the project committed to.",
+    "project timeline": "Planned duration of the project. Milestones are marked in red and labelled with their identifier: a dashed line is a milestone "
+                        "with a due date only, and a dotted line at each end joined across the top is a milestone window, due on its end date.",
     "project timelines": "Planned duration of every project. Bars span start to end date; projects without an end date run to the default horizon.",
     "workpackage timeline": "Gantt chart of the workpackages in this project, spanning the earliest to latest resource allocation.",
     "workpackage timelines": "Gantt chart of workpackages, spanning the earliest to latest resource allocation in each.",
     "workpackage allocations": "Monthly resource allocation stacked by contributor. A value of 1.0 is one person working full time for the month.",
     "milestones": "Milestones and the dates they are planned for. Dates come from the project definition.",
-    "resources": "All resources with their availability window. Click a name to open the resource page.",
+    "resources": "All resources with the first and last dates they are available. Click a name to open the resource page.",
     "projects": "All projects with their start and end dates. Click a name to open the project page.",
     "workpackages": "Workpackages with their overall dates and total allocated effort in person-months.",
     "tasks": "All tasks. Click a name to open the task page with its timeline and progress.",
@@ -1264,7 +1272,13 @@ class HTML:
 
             facts = []
             if kind == "resource":
-                facts += [("User name", first("uname")), ("Available from", first("start")), ("Available to", first("end") or "open ended")]
+                start = pd.to_datetime(df["start"]) if "start" in df.columns else pd.Series(dtype="datetime64[ns]")
+                end = pd.to_datetime(df["end"]) if "end" in df.columns else pd.Series(dtype="datetime64[ns]")
+                facts += [("User name", first("uname")),
+                          ("Available from", f"{start.min():%Y-%m-%d}" if len(start) and start.notna().all() else None),
+                          ("Available to", f"{end.max():%Y-%m-%d}" if len(end) and end.notna().all() else "open ended")]
+                if len(df) > 1:
+                    facts.append(("Availability periods", str(len(df))))
             elif kind == "project":
                 facts += [("Start", first("start")), ("End", first("end") or "open ended")]
             elif kind in ("workpackage", "task"):

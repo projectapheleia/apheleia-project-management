@@ -3,10 +3,20 @@
 ## [Unreleased]
 
 ### Added
+ - Resources: availability periods. A resource can give a list of `periods`, each with a `start`, an `end` and an optional `availability`, the percentage of their time available from 0 to 100 (default 100). This covers leave, part time working, people joining or leaving and changes in hours. Time between periods is time the resource is not available. Only the first period can have no start and only the last can have no end. A resource with one period can still give `start` and `end` directly, now with an optional `availability`.
+ - Resources: invalid periods are reported as errors. These are overlapping periods, an end before its start, an availability outside 0 to 100, a period other than the last with no end, `periods` mixed with a top level `start`, `end` or `availability`, an empty list of periods, unexpected fields and dates that cannot be read.
+ - Resources: each period is a bar on the availability charts, faded in proportion to its availability, with the percentage shown on hover. A new Availability Periods table lists every period, and the resources table shows each resource's first start, last end and availability today. A resource with no period covering today shows `0% (no active period)`, to tell it apart from one on leave at 0%.
+ - examples/resources: `availability`, a mix of resources that are and are not active today at a range of availabilities, and `errors` with one directory for each way periods can be invalid. The `simple` example now shows leave and part time periods.
  - examples/milestones: `windows`, and `errors` with one directory for each way a milestone can be invalid. An error case passes only if the report exits with a non-zero status and the expected `ERROR :` message; every other example fails unless the report exits with status 0.
  - examples/Makefile: `make report` prints `<example> : PASSED` or `FAILED` as each example finishes, then the number passed and failed, and supports `-j`. `make clean` prints a one line summary.
  - Milestones: a project can give a milestone a `start` and an `end` date instead of a single `date`. These milestones can overlap, and are drawn on the project timeline as a window: a dotted vertical line at each end joined by a horizontal line. Single date milestones are unchanged. In project tables the dates are combined, e.g. `2026-03-01 to 2026-04-30`; the table of projects using a milestone has separate start and end columns, with the start blank for a single date. A window milestone is due on its end date. A milestone with only one of `start` and `end`, a mixture of `date` and `start`/`end`, or an end before its start is reported as an error. The `milestones/windows` example shows both kinds.
  - Milestones: dates can be relative to another milestone of the same project, e.g. `end: "M1.start + 6 months"`, `start: "M1.end - 10 days"` or `end: "start + 7 weeks"`, in days, weeks, months or years. Milestones can refer to each other in any order; unknown milestones and loops are reported as errors.
+
+### Changed
+ - Resources Available Over Time now counts full time equivalents, so a resource at 50% counts as 0.5 and one on leave for half a month counts as 0.5 for that month. Periods with no end now run to the end of the last bar, so the last bar is no longer under counted.
+ - The Resource Availability chart no longer has a key, since each row is already labelled with the resource.
+ - The Project Timeline help describes both kinds of milestone, a due date only and a window.
+ - Documentation: the resources and milestones input pages are rewritten in plain language, with worked examples, the rules, the report pages they affect and a table of the errors that are caught. The milestones page has a new timeline image showing both kinds of milestone, and the detail on milestone dates is now only on that page, with a short summary on the projects page.
 
 ## [v0.2.0] - 2026-11-07
 

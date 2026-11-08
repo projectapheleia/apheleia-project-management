@@ -36,7 +36,8 @@ Simple
 ``examples/simple``
 
 A minimal semiconductor project. One fully defined project and one with only a name, three resources, \
-three workpackages and three tasks, with one file for each type.
+three workpackages and three tasks, with one file for each type. The resources show periods of leave, part time \
+availability and a single open ended period.
 
 This is the best starting point for a new plan. The files are shown in full on each of the \
 :doc:`input file <../inputs/inputs>` pages.
@@ -56,6 +57,21 @@ start or an end, an end before the start, unexpected fields, duplicate milestone
 and relative dates that refer to an unknown milestone or to themselves. ``make report`` in ``errors`` runs the \
 report on each and passes only if the report fails with a non-zero exit status and the expected ``ERROR :`` \
 message, and does not generate a report.
+
+Resources
+---------
+
+``examples/resources``
+
+``availability`` shows a mix of resources: some active today at full time, part time or on leave at 0%, and \
+some with no active period because they have left, have not yet started or are between periods. Their \
+availabilities range from 0 to 100%. It also has periods given out of order, an availability written as \
+``25%``, a single period given without ``periods`` and a resource with no dates at all.
+
+``errors`` has one directory for each way a resource's availability periods can be invalid: periods that \
+overlap, an end before the start, an availability outside 0 to 100, a period with no end that is not the last, \
+periods mixed with a top level start, an empty list of periods, unexpected fields and dates that cannot be read. \
+``make report`` in ``errors`` checks each fails in the same way as the milestone error cases.
 
 Construction Single
 -------------------

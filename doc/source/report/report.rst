@@ -133,9 +133,10 @@ Workpackages
 Resources
 ^^^^^^^^^
 
-- **Overview** - availability of every resource, and the number of resources available over time
-- **Resource** - availability, effort allocated by project and by workpackage, the progress of their tasks, \
-  and their definition
+- **Overview** - when every resource is available and at what percentage, the number of full time \
+  equivalent resources available over time, each resource's availability today, and every availability period
+- **Resource** - their availability periods, effort allocated by project and by workpackage, the progress of \
+  their tasks, and their definition. See :doc:`../inputs/resources` for how to read the availability charts
 
 .. image:: /images/resource_availability.png
    :align: center
@@ -161,8 +162,10 @@ Tasks
 Milestones
 ^^^^^^^^^^
 
-- **Overview** - table of all milestones
-- **Milestone** - definition of the milestone
+- **Overview** - every milestone, the projects it is the current milestone for, and when it is next due
+- **Milestone** - every project that has dated the milestone, with its start (for windows) and end dates, \
+  whether it has passed, is current or is upcoming, and the milestone's definition. See \
+  :doc:`../inputs/milestones` for how milestones are dated
 
 All timelines mark today's date. Allocations are shown in person-months, task effort in days. \
 See :doc:`workpackages <../inputs/workpackages>` and :doc:`tasks <../inputs/tasks>` for how these are calculated.

@@ -38,7 +38,8 @@ Fields
 Milestones
 ----------
 
-Each entry in ``milestones`` has:
+``milestones`` lists the :doc:`milestones <milestones>` that apply to the project and gives each one its dates. \
+Each entry has:
 
 .. list-table::
    :header-rows: 1
@@ -46,45 +47,34 @@ Each entry in ``milestones`` has:
 
    * - Field
      - Required
-     - Description
+     - What it means
    * - ``milestone``
      - Yes
-     - Name of a milestone defined in a :doc:`milestones <milestones>` file
+     - The name of a milestone from a :doc:`milestones <milestones>` file
    * - ``date``
      - See below
-     - Date the milestone is due on this project
+     - The date the milestone is due, when only the delivery date matters
    * - ``start``
      - See below
-     - Date the milestone window opens
+     - The day a milestone window opens
    * - ``end``
      - See below
-     - Date the milestone window closes, i.e. the date the milestone is due
+     - The day a milestone window closes, which is the day it is due
 
-A milestone is given either a ``date`` or both a ``start`` and an ``end``, not a mixture.
-
-A milestone with a ``date`` is marked on the project timeline with a single vertical line. A milestone with a \
-``start`` and ``end`` is a window, and is drawn as a dotted vertical line at each end joined by a horizontal \
-line. Windows may overlap each other. In tables the two dates are combined, e.g. ``2026-03-01 to 2026-04-30``. \
-A window milestone is due on its ``end`` date: that is the date used to check workpackages, to assign tasks and \
-to decide which milestone is current. See the ``milestones/windows`` example.
-
-Relative dates
-~~~~~~~~~~~~~~
-
-``date``, ``start`` and ``end`` can be written relative to another milestone of the same project, as \
-``<milestone>.<field> [+|- <number> <unit>]``, where the field is ``date``, ``start`` or ``end`` and the unit is \
-``days``, ``weeks``, ``months`` or ``years``. Without a milestone the field is the milestone's own, so \
-``end: "start + 6 months"`` is a window six months long. Milestones can refer to each other in any order, \
-but not in a loop. The ``date`` and ``end`` of a milestone are both the date it is due, and the ``start`` of a \
-single date milestone is its ``date``.
+Give each milestone **either** a ``date`` **or** both a ``start`` and an ``end``. Any of these can be a fixed \
+date such as ``"2026-03-31"`` or relative to another milestone of the project, such as ``"M1.end + 6 weeks"``.
 
 .. code-block:: yaml
 
-    - milestone: "M2"
-      start: "M1.end + 1 day"
-      end: "start + 7 weeks"
+        milestones:
+          - milestone: "M1"
+            date: "2026-02-01"
+          - milestone: "M2"
+            start: "M1.date + 1 day"
+            end: "start + 7 weeks"
 
-Milestones are marked on the project timeline. A milestone that is not defined in a milestones file is not shown.
+See :doc:`milestones` for milestones with a due date, windows, relative dates, how milestones appear in the report \
+and the mistakes that are caught.
 
 Example
 -------

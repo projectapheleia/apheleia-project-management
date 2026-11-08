@@ -189,7 +189,8 @@ def gantt(  df : pd.DataFrame,
             colors: dict=None,
             show_legend: bool=False,
             milestones: tuple[str, str]=None,
-            windows: dict[str, tuple[pd.Timestamp, pd.Timestamp]]=None) -> px.timeline:
+            windows: dict[str, tuple[pd.Timestamp, pd.Timestamp]]=None,
+            opacity: str=None) -> px.timeline:
     """
     Generate Gantt chart from dataframe
 
@@ -222,6 +223,8 @@ def gantt(  df : pd.DataFrame,
     :param windows: Optional dictionary of name to (start, end) for milestones that span a period. Each is drawn
                     as two dotted vertical lines joined by a horizontal line, and may overlap others
     :type windows: dict[str, tuple[pd.Timestamp, pd.Timestamp]]
+    :param opacity: Optional column holding the opacity (0 to 1) of each bar, e.g. to fade periods of part time availability
+    :type opacity: str
     :return: Gantt chart
     :rtype: px.timeline
     """
@@ -244,10 +247,17 @@ def gantt(  df : pd.DataFrame,
         df_new["_desc"] = df_new[description].fillna("").astype(str)
     else:
         df_new["_desc"] = ""
+    if opacity is not None and opacity in df_new.columns:
+        df_new["_opacity"] = df_new[opacity].fillna(1).astype(float)
+    else:
+        df_new["_opacity"] = 1.0
+
+    # Several bars can share a row, e.g. the availability periods of a resource
+    n_rows = max(df_new[y[0]].nunique(), 1) if len(df_new) else 0
 
     fig = px.timeline(
         df_new,
-        custom_data=[y[0], "_start", "_end", "_desc"],
+        custom_data=[y[0], "_start", "_end", "_desc", "_opacity"],
         title=title,
         x_start=x_start[0],
         x_end=x_end[0],
@@ -276,7 +286,7 @@ def gantt(  df : pd.DataFrame,
         x_min = min([df_new[x_start[0]].min()] + points)
         x_max = max([df_new[x_end[0]].max()] + points)
         span = max((x_max - x_min).total_seconds(), 1)
-        plot_height = len(df) * bar_height
+        plot_height = n_rows * bar_height
         row_ends = []
 
         def place(first, last, name):
@@ -319,6 +329,12 @@ def gantt(  df : pd.DataFrame,
                                font=dict(color="#d62839", size=12))
         rows = max(len(row_ends), 1)
 
+    # Opacity of each bar, set before shading so the shading is faded with the bar
+    if opacity is not None:
+        for trace in fig.data:
+            if isinstance(trace, go.Bar) and trace.customdata is not None:
+                trace.marker.opacity = [float(cd[4]) for cd in trace.customdata]
+
     style_axes(fig)
     _shade_bars(fig, BAR_WIDTH)
 
@@ -345,7 +361,7 @@ def gantt(  df : pd.DataFrame,
         title= {'x':0.5, 'xanchor': 'center', 'yanchor': 'top'},
         margin=(dict(l=50, r=50, t=50 + (rows - 1) * MARKER_ROW_HEIGHT, b=50)),
         colorway=px.colors.qualitative.Alphabet,
-        height=((len(df)*bar_height) + 100 + (rows - 1) * MARKER_ROW_HEIGHT),
+        height=((n_rows*bar_height) + 100 + (rows - 1) * MARKER_ROW_HEIGHT),
         autosize=True,
     )
 

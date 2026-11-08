@@ -1,0 +1,6 @@
+type: "resources_definitions"
+data:
+  - resource: "Mickey Mouse"
+    periods:
+      - start: "2026-01-01"
+        end: "2026-13-45"
